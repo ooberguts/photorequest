@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { version as APP_VERSION } from '../package.json';
+import { BUILD } from './lib/build';
+import AppUpdates from './components/AppUpdates';
 import { isTauri } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import {
@@ -504,13 +505,23 @@ export default function App() {
           </button>
         </div>
         <div className="sidebar-bottom">
+          <AppUpdates
+            ready={hydrated}
+            disabled={!!busy}
+            beforeInstall={async () => {
+              setBusy('Saving order and installing update…');
+              await saveChain.current.catch(() => {});
+              await saveDraft(latestDraft.current.order, latestDraft.current.completed);
+            }}
+            afterInstallError={() => setBusy('')}
+          />
           <div className="offline-status">
             <span className="status-dot" />
             <span>Stored locally</span>
             <CloudOff size={14} />
           </div>
           <div className="app-version">
-            PhotoRequest <span>v{APP_VERSION}</span>
+            PhotoRequest <span>Build {BUILD.buildNumber}</span>
           </div>
         </div>
       </aside>
@@ -1024,7 +1035,9 @@ export default function App() {
           )}
         </main>
         <footer className="app-footer">
-          <span>PhotoRequest v{APP_VERSION}</span>
+          <span>
+            PhotoRequest · commit {BUILD.shortCommit} · build {BUILD.buildNumber}
+          </span>
           <span>
             <LockKeyhole size={12} /> Files are stored on this computer.
           </span>

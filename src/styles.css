@@ -522,6 +522,143 @@ nav .nav-count {
   color: #a8aea3;
   padding: 15px 8px;
 }
+.updates-sidebar-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 9px;
+  margin-bottom: 10px;
+  border: 1px solid #dfe7d9;
+  border-radius: 7px;
+  background: #fff;
+  color: #5b7450;
+  font-size: 11px;
+}
+.updates-sidebar-button.available {
+  background: #e8f2dd;
+  border-color: #aec893;
+}
+.update-commit {
+  margin-left: auto;
+  font-size: 9px;
+  color: #849777;
+  font-family: monospace;
+}
+.updates-dialog {
+  width: 610px;
+  max-width: calc(100vw - 40px);
+  max-height: calc(100vh - 50px);
+  overflow: auto;
+}
+.updates-body {
+  padding: 23px 27px;
+}
+.installed-build {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #f2f6ed;
+  border: 1px solid #dfe8d5;
+  padding: 16px;
+  border-radius: 8px;
+  color: #517345;
+}
+.installed-build strong {
+  display: block;
+  font-size: 15px;
+}
+.installed-build span {
+  display: block;
+  font-size: 11px;
+  color: #7a8f6b;
+  margin-top: 6px;
+}
+.update-source {
+  margin: 17px 0;
+  font-size: 11px;
+  color: #849576;
+}
+.update-result {
+  border: 1px solid #dce8d0;
+  background: #f8fbf3;
+  padding: 15px;
+  border-radius: 7px;
+  color: #658450;
+}
+.update-result > strong {
+  font-size: 13px;
+}
+.update-result p {
+  font-size: 12px;
+  margin: 7px 0;
+}
+.update-result > span {
+  font-size: 11px;
+}
+.update-result.available {
+  background: #ebf5df;
+  border-color: #bbd69f;
+}
+.auto-update-toggle {
+  margin: 20px 0 12px;
+  font-size: 12px;
+  color: #667c56;
+}
+.updates-body .micro-note {
+  font-size: 11px;
+}
+.update-auth {
+  border-top: 1px solid #e4ebdc;
+  padding-top: 19px;
+  margin-top: 20px;
+}
+.update-auth h3 {
+  font-size: 13px;
+}
+.update-auth > p {
+  font-size: 11px;
+  color: #7c8e6e;
+  margin: 9px 0 14px;
+}
+.update-auth label {
+  font-size: 11px;
+  color: #7c906c;
+}
+.update-auth input {
+  font-size: 12px;
+}
+.update-auth-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+}
+.update-auth-buttons .button {
+  font-size: 11px;
+}
+.update-release-notes {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font:
+    11px/1.8 'DM Sans Variable',
+    sans-serif;
+  padding: 12px;
+  border-radius: 7px;
+  color: #738b61;
+  background: #f7f9f3;
+}
+.update-install-progress {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 15px;
+  background: #edf6e3;
+  margin-top: 18px;
+  border-radius: 7px;
+  color: #6d8c55;
+  font-size: 12px;
+}
 .app-main {
   margin-left: 222px;
   width: calc(100% - 222px);

@@ -13,3 +13,6 @@ output/
 
 *.tsbuildinfo
 src-tauri/gen/
+.release/
+*.key
+*.key.pub

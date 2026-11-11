@@ -19,6 +19,7 @@ A Tauri 2 desktop app for creating photo print orders and opening received order
 - Open batch PDFs in the default PDF viewer to print, or save them separately. Track completed batches locally.
 - Recover the current draft locally. Image bytes are stored once in IndexedDB, independently of specification edits.
 - Work offline without an account, cloud service, or remote font dependency.
+- Check for signed private GitHub releases automatically, display the installed commit/build number, and save the active order before installing and restarting. See [application updates](docs/UPDATES.md) for private repository sign-in and commit versioning.
 
 ## Develop
 
@@ -56,7 +57,7 @@ npm run tauri build -- --bundles nsis,msi
 
 Builds appear under `src-tauri/target/release/bundle/`. macOS builds use ad-hoc signing; Windows installers are unsigned. For public distribution, configure [macOS signing and notarization](https://v2.tauri.app/distribute/sign/macos/) and [Windows signing](https://v2.tauri.app/distribute/sign/windows/) using your own developer certificates. Replace the macOS `signingIdentity` of `-` when configuring a Developer ID certificate.
 
-The included GitHub Actions workflow runs checks and builds installers for Apple Silicon Macs, Intel Macs, and Windows x64. It runs on pull requests, pushes to `main`/`master`, version tags, and manual dispatch. Download installers from the workflow's artifacts. Uploading this project to a GitHub repository is separate from local development.
+The included GitHub Actions workflow runs checks and builds installers for Apple Silicon Macs, Intel Macs, and Windows x64. Successful main builds publish a complete signed GitHub release with an updater manifest. Release names include the exact commit and commit-count build number. PR builds do not receive signing secrets. Download installers from Releases or workflow artifacts. See [update and release configuration](docs/UPDATES.md).
 
 ## Request an order
 
