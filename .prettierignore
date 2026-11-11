@@ -1,0 +1,11 @@
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/gen/
+schema/order-v1.schema.json
+package-lock.json
+tmp/
+output/
+test-results/
+playwright-report/
+*.tsbuildinfo

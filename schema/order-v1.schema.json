@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "format": {
+      "type": "string",
+      "const": "photorequest"
+    },
+    "schemaVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "order": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "customer": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 5000
+        },
+        "targetDpi": {
+          "type": "integer",
+          "minimum": 72,
+          "maximum": 1200
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "customer",
+        "notes",
+        "targetDpi",
+        "createdAt"
+      ],
+      "additionalProperties": false
+    },
+    "photos": {
+      "minItems": 1,
+      "maxItems": 500,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^photo\\d{5}$"
+          },
+          "file": {
+            "type": "string",
+            "pattern": "^images\\/photo\\d{5}\\.(jpg|png|webp)$"
+          },
+          "originalName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "byteLength": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 104857600
+          },
+          "width": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 80000
+          },
+          "height": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 80000
+          },
+          "sourceDpi": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "y": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "colorSpace": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "mime": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp"
+            ]
+          },
+          "requests": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "widthInches": {
+                  "type": "number",
+                  "minimum": 0.5,
+                  "maximum": 60
+                },
+                "heightInches": {
+                  "type": "number",
+                  "minimum": 0.5,
+                  "maximum": 60
+                },
+                "quantity": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 999
+                },
+                "finish": {
+                  "type": "string",
+                  "enum": [
+                    "matte",
+                    "gloss",
+                    "holographic"
+                  ]
+                },
+                "holographicStyle": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "fit": {
+                  "type": "string",
+                  "enum": [
+                    "fill",
+                    "fit"
+                  ]
+                },
+                "effectiveDpi": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "widthInches",
+                "heightInches",
+                "quantity",
+                "finish",
+                "holographicStyle",
+                "fit",
+                "effectiveDpi"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "file",
+          "originalName",
+          "sha256",
+          "byteLength",
+          "width",
+          "height",
+          "sourceDpi",
+          "colorSpace",
+          "mime",
+          "requests"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "format",
+    "schemaVersion",
+    "order",
+    "photos"
+  ],
+  "additionalProperties": false,
+  "$id": "urn:photorequest:order:v1",
+  "title": "PhotoRequest order v1"
+}
