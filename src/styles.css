@@ -2136,6 +2136,139 @@ dialog::backdrop {
   background-image: radial-gradient(#ccd7c1 0.6px, transparent 0.6px);
   background-size: 9px 9px;
 }
+.sheet-utilization {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  background: #fbfcfa;
+}
+.sheet-utilization > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: #687b61;
+}
+.sheet-utilization strong {
+  font-weight: 600;
+}
+.paper-use-track {
+  height: 5px;
+  background: #e6ecdf;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+.paper-use-track > span {
+  display: block;
+  height: 100%;
+  background: #8fac75;
+  border-radius: inherit;
+}
+.custom-sheet-settings {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f6f9f1;
+  border: 1px solid #e2e9d8;
+  border-radius: 7px;
+}
+.custom-sheet-settings label {
+  font-size: 10px;
+  color: #718566;
+}
+.custom-sheet-settings .two-fields {
+  gap: 8px;
+}
+.paper-savings {
+  color: #69885a;
+  font-size: 11px;
+  line-height: 1.7;
+  margin-top: 10px;
+}
+.paper-confirm-dialog {
+  width: 560px;
+  max-width: calc(100vw - 40px);
+  max-height: calc(100vh - 50px);
+  overflow-y: auto;
+}
+.paper-confirm-dialog .dialog-header h2 {
+  font-size: 22px;
+}
+.paper-confirm-body {
+  padding: 24px 27px;
+}
+.paper-confirm-body > p {
+  color: #65735f;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.required-paper {
+  margin: 20px 0;
+  padding: 7px 17px;
+  background: #f5f8f0;
+  border: 1px solid #dfe8d5;
+  border-radius: 8px;
+}
+.required-paper > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: baseline;
+  padding: 12px 0;
+  border-bottom: 1px solid #e4ebdd;
+  font-size: 12px;
+}
+.required-paper > div:last-child {
+  border-bottom: 0;
+}
+.required-paper dt {
+  color: #77866b;
+}
+.required-paper dd {
+  margin: 0;
+  font-weight: 600;
+  color: #3c5a36;
+  text-align: right;
+  max-width: 62%;
+  overflow-wrap: anywhere;
+}
+.paper-printer-reminder {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #738b62;
+  margin: 18px 0;
+}
+.paper-printer-reminder svg {
+  margin-top: 3px;
+}
+.paper-printer-reminder p {
+  font-size: 12px;
+  line-height: 1.8;
+}
+.paper-confirm-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  color: #455b3f;
+  line-height: 1.8;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 14px;
+  border: 1px solid #c9d9bd;
+  border-radius: 7px;
+  background: #fcfef9;
+}
+.paper-confirm-check input {
+  margin: 4px 0 0;
+}
+.paper-confirm-dialog .dialog-footer {
+  justify-content: flex-end;
+}
+.paper-confirm-dialog .dialog-footer .button {
+  font-size: 12px;
+}
 .paper-preview {
   background: #fff;
   width: 100%;

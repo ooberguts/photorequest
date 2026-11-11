@@ -4,11 +4,19 @@
 
 PDF pages and print frames are defined in points: 72 points equals one inch. Print requests are never automatically scaled down to fit a sheet. Choose an appropriate paper size or smaller margins if a frame does not fit.
 
-Supported sheets include Letter, A4, Legal, A3, 13×19-inch Super B, and 4×6, 5×7, and 8×10 photo stock. A deterministic shelf layout places multiple print frames on a sheet and may rotate a frame 90 degrees to fit. The single-print layout centers each requested copy on a separate sheet. White space can remain because this is a simple shelf layout, not an optimal nesting solver.
+Supported sheets include Letter, A4, Legal, Tabloid, A3, 13×19-inch Super B, and 4×6, 5×7, and 8×10 photo stock. Custom sheets accept dimensions in inches or millimeters, from 1 to 60 inches per edge. Select automatic, portrait, or landscape orientation. The same final geometry is used for the preview and PDF.
+
+**Auto arrange** tries multiple item orders and rectangle-packing heuristics. It fills free spaces around large prints, revisits earlier sheets for smaller prints, and rotates frames 90 degrees when useful. It retains a row-based candidate, choosing a result with no more sheets than the previous row layout. The automatic orientation option compares both sheet orientations and chooses the result with fewer pages, preferring portrait on a tie. Large orders use a bounded number of strategies to keep the interface responsive. This is a heuristic search; it does not guarantee the mathematical optimum for every mixture of sizes.
+
+Margins are kept clear and the specified gap is reserved between print frames, with no extra gap required at the sheet edges. Printable-area usage measures the combined area of print frames as a percentage of the area inside the margins; it is not an ink-coverage estimate. The savings comparison uses one print per sheet as the baseline. **One print per sheet** remains available and centers each requested copy on its own sheet.
 
 Prints are grouped by finish and, for holographic paper, by pattern name. Load the corresponding stock for each batch. Pattern names describe materials; the application does not create simulated holographic pixels.
 
 ## Printer settings
+
+Every **Open PDF to print** action first displays a paper-confirmation popup. It lists the required finish, holographic pattern when applicable, actual sheet size and orientation, sheet count, and print count. The operator must acknowledge checking the loaded stock and using matching printer paper settings. Cancelling does not generate or open a print PDF; the acknowledgement resets before the next print action. Saving a PDF is an export action and does not require this popup.
+
+This confirmation is an operator check. The application cannot inspect a printer's loaded paper or enforce settings in an external PDF viewer. The reminder explicitly tells the operator to select matching paper size and media type in the viewer's print dialog.
 
 Use **Actual size / 100%**, one PDF page per physical sheet, single-sided, and one copy. All requested copies are already included in the PDF pages. Disable “Fit to page,” “Shrink oversized pages,” and automatic scaling.
 

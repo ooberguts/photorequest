@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { version as APP_VERSION } from '../package.json';
 import { isTauri } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import {
@@ -404,7 +405,15 @@ export default function App() {
   }
   useEffect(() => {
     function keydown(e: KeyboardEvent) {
-      if (!hydrated || busy || editing.length || confirmation || !(e.metaKey || e.ctrlKey)) return;
+      if (
+        !hydrated ||
+        busy ||
+        editing.length ||
+        confirmation ||
+        document.querySelector('dialog[open]') ||
+        !(e.metaKey || e.ctrlKey)
+      )
+        return;
       if (e.key.toLowerCase() === 's') {
         e.preventDefault();
         if (order.photos.length) requestExport();
@@ -501,7 +510,7 @@ export default function App() {
             <CloudOff size={14} />
           </div>
           <div className="app-version">
-            PhotoRequest <span>v0.1.0</span>
+            PhotoRequest <span>v{APP_VERSION}</span>
           </div>
         </div>
       </aside>
@@ -1015,7 +1024,7 @@ export default function App() {
           )}
         </main>
         <footer className="app-footer">
-          <span>PhotoRequest v0.1.0</span>
+          <span>PhotoRequest v{APP_VERSION}</span>
           <span>
             <LockKeyhole size={12} /> Files are stored on this computer.
           </span>

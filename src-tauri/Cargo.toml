@@ -1,6 +1,6 @@
 [package]
 name = "photorequest"
-version = "0.1.0"
+version = "0.2.0"
 description = "Build, share, and print portable photo orders"
 authors = ["PhotoRequest contributors"]
 edition = "2021"

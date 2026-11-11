@@ -13,7 +13,9 @@ A Tauri 2 desktop app for creating photo print orders and opening received order
 - Preserve original image bytes in the ZIP while renaming the packaged copies `photo00001.jpg`, `photo00002.png`, etc.
 - Include a versioned `order.json` with image metadata, SHA-256 checksums, sizes, copies, finishes, and effective DPI.
 - Import and verify an order ZIP, review specifications, and edit or export the order again.
-- Prepare exact-size PDF sheets, grouped by paper finish and holographic pattern, with multiple prints per sheet or one print per sheet.
+- Auto-arrange mixed print sizes into available spaces, trying multiple packing strategies to reduce sheet count while retaining exact dimensions and cutting gaps.
+- Choose standard or custom sheet sizes in inches or millimeters, automatic/portrait/landscape orientation, and multiple prints per sheet or one print per sheet. Preview printable-area usage and sheet savings.
+- Keep paper finishes and holographic patterns in separate PDF batches. Confirm the required finish, pattern, sheet size, and matching printer media settings before opening a print job.
 - Open batch PDFs in the default PDF viewer to print, or save them separately. Track completed batches locally.
 - Recover the current draft locally. Image bytes are stored once in IndexedDB, independently of specification edits.
 - Work offline without an account, cloud service, or remote font dependency.
@@ -69,10 +71,10 @@ Image numbering follows the gallery order. Use the arrows on image previews to r
 
 1. Choose **Open order ZIP**. The app checks the manifest and verifies the images before replacing an active draft.
 2. Open **Print desk** and select a paper batch.
-3. Load the specified physical paper, choose the sheet size and margins, and review the preview.
-4. Choose **Open PDF to print** or **Save batch PDF**.
-5. In the PDF viewer, print at **Actual size / 100%**, **one page per sheet**, **single-sided**, and **one copy**. Requested copies are already expanded into the PDF.
-6. Select the correct paper type and color settings in the printer driver. Mark the batch printed when finished.
+3. Choose a standard or custom sheet size, orientation, margins, and cutting gap. **Auto arrange** tries multiple layouts and fills available spaces without resizing the prints. The preview reports prints per sheet, printable-area usage, and sheets saved against one print per sheet.
+4. Load the specified physical paper and choose **Open PDF to print**. Review the required finish, holographic pattern, and sheet size in the paper-confirmation popup. Check the acknowledgement before continuing. **Save batch PDF** exports a file without opening a print job.
+5. In the PDF viewer, select the matching paper size and media type. Print at **Actual size / 100%**, **one page per sheet**, **single-sided**, and **one copy**. Requested copies are already expanded into the PDF.
+6. Select color settings in the printer driver and mark the batch printed when finished.
 
 The app generates PDF geometry in points (72 points per inch). It does not silently shrink a print to fit a sheet. A print that cannot fit produces an actionable message. Printer nonprintable margins, borderless expansion, and driver scaling can still change a physical print; measure a test print before producing an order.
 
@@ -104,7 +106,7 @@ npm run test:e2e
 
 If Chrome is already installed, `PLAYWRIGHT_CHROME=1 npm run test:e2e` uses an isolated Chrome profile on macOS/Linux. On PowerShell, set `$env:PLAYWRIGHT_CHROME="1"` before running the test command.
 
-Unit tests cover resolution calculations, physical sheet geometry, quantities, finish grouping, archive checksums, schema validation, and unsafe ZIP entries. Browser tests use actual image files and verify editing, local recovery, ZIP round trips, PDF dimensions, mixed formats, bulk operations, and non-fitting print sizes. Native printing and printer driver behavior need testing on actual target machines and hardware.
+Unit tests cover resolution calculations, physical sheet geometry, quantities, finish grouping, archive checksums, schema validation, and unsafe ZIP entries. Packing tests include gap-filling regressions, deterministic layouts, randomized geometry checks, and 5,000-copy orders. Browser tests use actual image files and verify editing, local recovery, ZIP round trips, custom landscape PDF geometry, paper-confirmation acknowledgement/cancellation, mixed formats, bulk operations, and non-fitting print sizes. Native printing and printer driver behavior need testing on actual target machines and hardware.
 
 ## Project layout
 
@@ -115,6 +117,7 @@ src/
   lib/package.ts       ZIP import/export and integrity checks
   lib/images.ts        Image decoding and source metadata
   lib/printing.ts      Physical sheet layout and PDF generation
+  lib/packing.ts       Multi-strategy rectangle packing and gap handling
   lib/storage.ts       Local draft and image storage
   lib/files.ts         Browser and Tauri file adapters
 src-tauri/             Rust shell, native PDF opening, permissions, icons

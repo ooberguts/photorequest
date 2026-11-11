@@ -1,7 +1,7 @@
 {
   "name": "photorequest",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "An offline photo print order studio for macOS and Windows, built with Tauri.",
   "scripts": {

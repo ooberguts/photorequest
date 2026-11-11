@@ -1,5 +1,6 @@
 import type { PDFImage } from 'pdf-lib';
 import { loadImage } from './images';
+import { packPrints } from './packing';
 import {
   finishLabel,
   orientedSize,
@@ -13,6 +14,7 @@ export const PAPERS = [
   { id: 'letter', label: 'US Letter', detail: '8.5 × 11 in', width: 8.5, height: 11 },
   { id: 'a4', label: 'A4', detail: '210 × 297 mm', width: 210 / 25.4, height: 297 / 25.4 },
   { id: 'legal', label: 'US Legal', detail: '8.5 × 14 in', width: 8.5, height: 14 },
+  { id: 'tabloid', label: 'Tabloid', detail: '11 × 17 in', width: 11, height: 17 },
   { id: 'a3', label: 'A3', detail: '297 × 420 mm', width: 297 / 25.4, height: 420 / 25.4 },
   { id: '13x19', label: 'Super B', detail: '13 × 19 in', width: 13, height: 19 },
   { id: '4x6', label: 'Photo 4 × 6', detail: 'Borderless stock', width: 4, height: 6 },
@@ -21,6 +23,9 @@ export const PAPERS = [
 ] as const;
 export type PrintSettings = {
   paper: string;
+  customWidth: number;
+  customHeight: number;
+  orientation: 'auto' | 'portrait' | 'landscape';
   margin: number;
   gap: number;
   cropMarks: boolean;
@@ -28,6 +33,9 @@ export type PrintSettings = {
 };
 export const DEFAULT_PRINT: PrintSettings = {
   paper: 'letter',
+  customWidth: 8.5,
+  customHeight: 11,
+  orientation: 'auto',
   margin: 0.25,
   gap: 0.2,
   cropMarks: true,
@@ -43,6 +51,38 @@ export type Placement = PrintItem & {
   rotated: boolean;
 };
 export type PrintPage = { width: number; height: number; placements: Placement[] };
+export type PaperSize = { label: string; width: number; height: number };
+
+export function paperSize(settings: PrintSettings): PaperSize {
+  if (settings.paper === 'custom') {
+    if (
+      ![settings.customWidth, settings.customHeight].every(
+        (n) => Number.isFinite(n) && n >= 1 && n <= 60,
+      )
+    )
+      throw new Error(
+        'Custom sheet width and height must each be between 1 and 60 inches (25.4–1524 mm).',
+      );
+    return { label: 'Custom sheet', width: settings.customWidth, height: settings.customHeight };
+  }
+  const paper = PAPERS.find((p) => p.id === settings.paper);
+  if (!paper) throw new Error('Choose a supported paper size.');
+  return paper;
+}
+
+export function sheetSizeLabel(
+  page: Pick<PrintPage, 'width' | 'height'>,
+  units: 'in' | 'mm' = 'in',
+) {
+  const scale = units === 'mm' ? 25.4 : 1;
+  return `${Number((page.width * scale).toFixed(units === 'mm' ? 1 : 3))} × ${Number((page.height * scale).toFixed(units === 'mm' ? 1 : 3))} ${units}`;
+}
+
+export function pageUsage(page: PrintPage, margin: number) {
+  const usable = (page.width - 2 * margin) * (page.height - 2 * margin);
+  const used = page.placements.reduce((n, p) => n + p.width * p.height, 0);
+  return usable > 0 ? Math.min(100, Math.round((used / usable) * 100)) : 0;
+}
 
 export function printGroups(order: Order): PrintGroup[] {
   const groups = new Map<string, PrintGroup>();
@@ -61,10 +101,9 @@ export function printGroups(order: Order): PrintGroup[] {
   return [...groups.values()].sort((a, b) => a.label.localeCompare(b.label));
 }
 
-/** Exact inch geometry; a deterministic shelf packer never scales a requested print. */
+/** Preview and PDF output use the same exact-size, paper-aware layout. */
 export function layoutGroup(group: PrintGroup, settings: PrintSettings): PrintPage[] {
-  const paper = PAPERS.find((p) => p.id === settings.paper);
-  if (!paper) throw new Error('Choose a supported paper size.');
+  const paper = paperSize(settings);
   if (
     !Number.isFinite(settings.margin) ||
     settings.margin < 0 ||
@@ -74,76 +113,81 @@ export function layoutGroup(group: PrintGroup, settings: PrintSettings): PrintPa
     settings.gap > 2
   )
     throw new Error('Margins and spacing must be between 0 and 2 inches.');
-  const usableW = paper.width - 2 * settings.margin,
-    usableH = paper.height - 2 * settings.margin;
-  const pages: PrintPage[] = [];
-  const fresh = () => {
-    const page: PrintPage = { width: paper.width, height: paper.height, placements: [] };
-    pages.push(page);
-    return page;
-  };
-  let page = fresh(),
-    x = settings.margin,
-    y = settings.margin,
-    rowHeight = 0;
-  const eps = 0.00001;
-  const sorted = [...group.items].sort(
-    (a, b) =>
-      b.request.widthInches * b.request.heightInches -
-      a.request.widthInches * a.request.heightInches,
-  );
-  for (const item of sorted) {
-    const size = orientedSize(item.photo, item.request);
-    const candidates = [
-      { width: size.width, height: size.height, rotated: false },
-      { width: size.height, height: size.width, rotated: true },
-    ];
-    if (!candidates.some((c) => c.width <= usableW + eps && c.height <= usableH + eps))
+  if (!['auto', 'portrait', 'landscape'].includes(settings.orientation))
+    throw new Error('Choose a supported page orientation.');
+  if (!['pack', 'single'].includes(settings.layout))
+    throw new Error('Choose a supported page layout.');
+  const small = Math.min(paper.width, paper.height),
+    large = Math.max(paper.width, paper.height);
+  const orientations =
+    settings.orientation === 'auto'
+      ? [
+          { width: small, height: large },
+          { width: large, height: small },
+        ]
+      : [
+          {
+            width: settings.orientation === 'portrait' ? small : large,
+            height: settings.orientation === 'portrait' ? large : small,
+          },
+        ];
+  const items = group.items.map((data) => ({ data, ...orientedSize(data.photo, data.request) }));
+  const usableW = small - 2 * settings.margin,
+    usableH = large - 2 * settings.margin;
+  const eps = 1e-7;
+  for (const item of items) {
+    if (
+      !Number.isFinite(item.width) ||
+      !Number.isFinite(item.height) ||
+      item.width <= 0 ||
+      item.height <= 0
+    )
+      throw new Error('Print dimensions must be positive numbers.');
+    if (!(
+      (item.width <= usableW + eps && item.height <= usableH + eps) ||
+      (item.height <= usableW + eps && item.width <= usableH + eps)
+    ))
       throw new Error(
-        `A ${item.request.widthInches} × ${item.request.heightInches} in print does not fit on ${paper.label} with these margins. Choose larger paper or reduce the margin.`,
+        `A ${item.data.request.widthInches} × ${item.data.request.heightInches} in print does not fit on ${paper.label} with these margins. Choose larger paper or reduce the margin.`,
       );
-    if (settings.layout === 'single') {
-      if (page.placements.length) page = fresh();
-      const c = candidates.find((c) => c.width <= usableW + eps && c.height <= usableH + eps)!;
-      page.placements.push({
-        ...item,
-        ...c,
-        x: (paper.width - c.width) / 2,
-        y: (paper.height - c.height) / 2,
-      });
-      continue;
-    }
-    const fits = () =>
-      candidates
-        .filter(
-          (c) =>
-            x + c.width <= paper.width - settings.margin + eps &&
-            y + c.height <= paper.height - settings.margin + eps,
-        )
-        .sort(
-          (a, b) =>
-            Math.max(rowHeight, a.height) - Math.max(rowHeight, b.height) || a.height - b.height,
-        )[0];
-    let chosen = fits();
-    if (!chosen) {
-      x = settings.margin;
-      y += rowHeight + settings.gap;
-      rowHeight = 0;
-      chosen = fits();
-    }
-    if (!chosen) {
-      page = fresh();
-      x = settings.margin;
-      y = settings.margin;
-      rowHeight = 0;
-      chosen = fits();
-    }
-    if (!chosen) throw new Error('Could not place a print on this sheet.');
-    page.placements.push({ ...item, ...chosen, x, y });
-    x += chosen.width + settings.gap;
-    rowHeight = Math.max(rowHeight, chosen.height);
   }
-  return pages.filter((p) => p.placements.length);
+  let best: PrintPage[] | undefined;
+  for (const orientation of orientations) {
+    const width = orientation.width - 2 * settings.margin,
+      height = orientation.height - 2 * settings.margin;
+    const packed =
+      settings.layout === 'single'
+        ? items.map((item) => {
+            const rotated = item.width > width + eps || item.height > height + eps;
+            const w = rotated ? item.height : item.width,
+              h = rotated ? item.width : item.height;
+            return {
+              placements: [
+                {
+                  data: item.data,
+                  width: w,
+                  height: h,
+                  rotated,
+                  x: (width - w) / 2,
+                  y: (height - h) / 2,
+                },
+              ],
+            };
+          })
+        : packPrints(items, width, height, settings.gap);
+    const pages = packed.map((p) => ({
+      ...orientation,
+      placements: p.placements.map(({ data, ...frame }) => ({
+        ...data,
+        ...frame,
+        x: frame.x + settings.margin,
+        y: frame.y + settings.margin,
+      })),
+    }));
+    // Prefer fewer sheets; portrait wins equal results for predictable driver defaults.
+    if (!best || pages.length < best.length) best = pages;
+  }
+  return best || [];
 }
 
 async function normalizedJpeg(photo: Photo): Promise<Uint8Array> {

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import PrintConfirmation from './PrintConfirmation';
 import {
   ArrowUpRight,
   Check,
@@ -18,9 +19,11 @@ import {
   generatePrintPdf,
   layoutGroup,
   printGroups,
+  paperSize,
+  pageUsage,
+  sheetSizeLabel,
   type PrintGroup,
   type PrintSettings,
-  type PrintPage,
 } from '../lib/printing';
 import { effectiveDpi, safeName, sizeLabel, stats, type Order } from '../lib/model';
 import { saveFile, openPrintPdf } from '../lib/files';
@@ -35,21 +38,36 @@ type Props = {
 };
 export default function PrintDesk({ order, completed, onCompleted, run, busy, onAdd }: Props) {
   const [settings, setSettings] = useState<PrintSettings>(DEFAULT_PRINT);
-  const groups = printGroups(order);
+  const [sheetUnits, setSheetUnits] = useState<'in' | 'mm'>('in');
+  const [confirmPrint, setConfirmPrint] = useState(false);
+  const groups = useMemo(() => printGroups(order), [order]);
   const [activeKey, setActiveKey] = useState('');
   const active = groups.find((g) => g.key === activeKey) || groups[0];
   const [pageNumber, setPageNumber] = useState(0);
-  let pages: PrintPage[] = [],
-    layoutError = '';
-  try {
-    if (active) pages = layoutGroup(active, settings);
-  } catch (err) {
-    layoutError = err instanceof Error ? err.message : 'Check the sheet settings.';
-  }
-  const page = pages[Math.min(pageNumber, pages.length - 1)];
+  const { pages, paper, layoutError } = useMemo(() => {
+    try {
+      return {
+        pages: active ? layoutGroup(active, settings) : [],
+        paper: paperSize(settings),
+        layoutError: '',
+      };
+    } catch (err) {
+      return {
+        pages: [],
+        paper: undefined,
+        layoutError: err instanceof Error ? err.message : 'Check the sheet settings.',
+      };
+    }
+  }, [active, settings]);
+  const pageIndex = Math.min(pageNumber, Math.max(0, pages.length - 1));
+  const page = pages[pageIndex];
   const summary = stats(order);
   const countDone = groups.filter((g) => completed.includes(g.key)).length;
-  const paper = PAPERS.find((p) => p.id === settings.paper)!;
+  function updateSettings(patch: Partial<PrintSettings>) {
+    setSettings((s) => ({ ...s, ...patch }));
+    setPageNumber(0);
+  }
+  const customFactor = sheetUnits === 'mm' ? 25.4 : 1;
   async function pdf(group: PrintGroup, open: boolean) {
     await run(open ? 'Preparing print file…' : 'Building print-ready PDF…', async () => {
       const bytes = await generatePrintPdf(order, group, settings);
@@ -141,23 +159,54 @@ export default function PrintDesk({ order, completed, onCompleted, run, busy, on
                 <div>
                   <h3>Sheet preview</h3>
                   <span>
-                    {paper.label} · {paper.detail}
+                    {paper?.label || 'Sheet settings'}
+                    {page
+                      ? ` · ${sheetSizeLabel(page, settings.paper === 'a4' || settings.paper === 'a3' ? 'mm' : sheetUnits)}`
+                      : ''}
                   </span>
                 </div>
                 <span className="preview-pill">EXACT SIZE</span>
               </div>
+              {page && (
+                <div className="sheet-utilization">
+                  <div>
+                    <strong>
+                      {page.placements.length} {page.placements.length === 1 ? 'print' : 'prints'}{' '}
+                      on this sheet
+                    </strong>
+                    <span>{pageUsage(page, settings.margin)}% printable area used</span>
+                  </div>
+                  <div
+                    className="paper-use-track"
+                    role="meter"
+                    aria-label="Printable area used"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={pageUsage(page, settings.margin)}
+                  >
+                    <span style={{ width: `${pageUsage(page, settings.margin)}%` }} />
+                  </div>
+                </div>
+              )}
               <div className="sheet-preview-background">
                 {layoutError ? (
                   <div className="sheet-error">
                     <TriangleAlert size={29} />
-                    <strong>Print exceeds the selected sheet size</strong>
+                    <strong>
+                      {layoutError.includes('does not fit')
+                        ? 'Print exceeds the selected sheet size'
+                        : 'Check sheet settings'}
+                    </strong>
                     <p>{layoutError}</p>
                   </div>
                 ) : (
                   page && (
                     <div
                       className="paper-preview"
-                      style={{ aspectRatio: `${page.width} / ${page.height}` }}
+                      style={{
+                        aspectRatio: `${page.width} / ${page.height}`,
+                        maxWidth: Math.min(350, (400 * page.width) / page.height),
+                      }}
                     >
                       <div
                         className="paper-margin"
@@ -202,19 +251,18 @@ export default function PrintDesk({ order, completed, onCompleted, run, busy, on
               <div className="sheet-pagination">
                 <button
                   className="text-button"
-                  disabled={pageNumber === 0 || !pages.length}
-                  onClick={() => setPageNumber((n) => Math.max(0, n - 1))}
+                  disabled={pageIndex === 0 || !pages.length}
+                  onClick={() => setPageNumber(Math.max(0, pageIndex - 1))}
                 >
                   ← Previous
                 </button>
                 <span>
-                  Sheet {pages.length ? Math.min(pageNumber + 1, pages.length) : 0} of{' '}
-                  {pages.length}
+                  Sheet {pages.length ? pageIndex + 1 : 0} of {pages.length}
                 </span>
                 <button
                   className="text-button"
-                  disabled={pageNumber >= pages.length - 1}
-                  onClick={() => setPageNumber((n) => n + 1)}
+                  disabled={pageIndex >= pages.length - 1}
+                  onClick={() => setPageNumber(pageIndex + 1)}
                 >
                   Next →
                 </button>
@@ -237,8 +285,7 @@ export default function PrintDesk({ order, completed, onCompleted, run, busy, on
                   aria-label="Sheet size"
                   value={settings.paper}
                   onChange={(e) => {
-                    setSettings((s) => ({ ...s, paper: e.target.value }));
-                    setPageNumber(0);
+                    updateSettings({ paper: e.target.value });
                   }}
                 >
                   {PAPERS.map((p) => (
@@ -246,6 +293,66 @@ export default function PrintDesk({ order, completed, onCompleted, run, busy, on
                       {p.label} — {p.detail}
                     </option>
                   ))}
+                  <option value="custom">Custom sheet size</option>
+                </select>
+              </label>
+              {settings.paper === 'custom' && (
+                <div className="custom-sheet-settings">
+                  <label>
+                    Sheet units
+                    <select
+                      aria-label="Custom sheet units"
+                      value={sheetUnits}
+                      onChange={(e) => setSheetUnits(e.target.value as 'in' | 'mm')}
+                    >
+                      <option value="in">Inches</option>
+                      <option value="mm">Millimeters</option>
+                    </select>
+                  </label>
+                  <div className="two-fields">
+                    <label>
+                      Width ({sheetUnits})
+                      <input
+                        aria-label="Custom sheet width"
+                        type="number"
+                        min={customFactor}
+                        max={60 * customFactor}
+                        step={sheetUnits === 'in' ? 0.1 : 1}
+                        value={Number((settings.customWidth * customFactor).toFixed(3))}
+                        onChange={(e) =>
+                          updateSettings({ customWidth: Number(e.target.value) / customFactor })
+                        }
+                      />
+                    </label>
+                    <label>
+                      Height ({sheetUnits})
+                      <input
+                        aria-label="Custom sheet height"
+                        type="number"
+                        min={customFactor}
+                        max={60 * customFactor}
+                        step={sheetUnits === 'in' ? 0.1 : 1}
+                        value={Number((settings.customHeight * customFactor).toFixed(3))}
+                        onChange={(e) =>
+                          updateSettings({ customHeight: Number(e.target.value) / customFactor })
+                        }
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
+              <label>
+                Page orientation
+                <select
+                  aria-label="Page orientation"
+                  value={settings.orientation}
+                  onChange={(e) =>
+                    updateSettings({ orientation: e.target.value as PrintSettings['orientation'] })
+                  }
+                >
+                  <option value="auto">Automatic · fewest sheets</option>
+                  <option value="portrait">Portrait</option>
+                  <option value="landscape">Landscape</option>
                 </select>
               </label>
               <label>
@@ -254,14 +361,17 @@ export default function PrintDesk({ order, completed, onCompleted, run, busy, on
                   aria-label="Print layout"
                   value={settings.layout}
                   onChange={(e) => {
-                    setSettings((s) => ({ ...s, layout: e.target.value as 'pack' | 'single' }));
-                    setPageNumber(0);
+                    updateSettings({ layout: e.target.value as 'pack' | 'single' });
                   }}
                 >
-                  <option value="pack">Save paper · multiple prints</option>
+                  <option value="pack">Auto arrange · save paper</option>
                   <option value="single">One print per sheet</option>
                 </select>
               </label>
+              <p className="micro-note">
+                Auto arrange fills available spaces with mixed print sizes and rotates frames where
+                useful. Requested dimensions stay unchanged.
+              </p>
               <div className="two-fields">
                 <label>
                   Margin (in)
@@ -272,7 +382,7 @@ export default function PrintDesk({ order, completed, onCompleted, run, busy, on
                     max="2"
                     step="0.05"
                     value={settings.margin}
-                    onChange={(e) => setSettings((s) => ({ ...s, margin: Number(e.target.value) }))}
+                    onChange={(e) => updateSettings({ margin: Number(e.target.value) })}
                   />
                 </label>
                 <label>
@@ -284,7 +394,7 @@ export default function PrintDesk({ order, completed, onCompleted, run, busy, on
                     max="2"
                     step="0.05"
                     value={settings.gap}
-                    onChange={(e) => setSettings((s) => ({ ...s, gap: Number(e.target.value) }))}
+                    onChange={(e) => updateSettings({ gap: Number(e.target.value) })}
                   />
                 </label>
               </div>
@@ -292,7 +402,7 @@ export default function PrintDesk({ order, completed, onCompleted, run, busy, on
                 <input
                   type="checkbox"
                   checked={settings.cropMarks}
-                  onChange={(e) => setSettings((s) => ({ ...s, cropMarks: e.target.checked }))}
+                  onChange={(e) => updateSettings({ cropMarks: e.target.checked })}
                 />{' '}
                 Add cut guides
               </label>
@@ -310,11 +420,18 @@ export default function PrintDesk({ order, completed, onCompleted, run, busy, on
                   <span>{active.items.length} prints</span>
                   <span>{pages.length} sheets</span>
                 </div>
+                {!layoutError && pages.length < active.items.length && (
+                  <p className="paper-savings">
+                    {active.items.length - pages.length} fewer{' '}
+                    {active.items.length - pages.length === 1 ? 'sheet' : 'sheets'} than one print
+                    per sheet.
+                  </p>
+                )}
               </div>
               <button
                 className="button primary full-width"
                 disabled={!!busy || !!layoutError}
-                onClick={() => void pdf(active, true)}
+                onClick={() => setConfirmPrint(true)}
               >
                 <Printer size={16} /> Open PDF to print <ArrowUpRight size={15} />
               </button>
@@ -345,6 +462,18 @@ export default function PrintDesk({ order, completed, onCompleted, run, busy, on
               </p>
             </aside>
           </div>
+          {confirmPrint && pages.length > 0 && (
+            <PrintConfirmation
+              group={active}
+              pages={pages}
+              paperLabel={paper?.label || 'Custom sheet'}
+              onCancel={() => setConfirmPrint(false)}
+              onConfirm={() => {
+                setConfirmPrint(false);
+                void pdf(active, true);
+              }}
+            />
+          )}
           <section className="production-list panel">
             <div className="panel-heading">
               <FileImage size={18} />

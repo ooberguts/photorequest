@@ -82,13 +82,15 @@ export default function Guide() {
           <Printer size={25} />
           <h3>Prepare print sheets</h3>
           <p>
-            Open Print desk, load the paper for a batch, and choose a sheet size and layout. Save
-            the exact-size PDF or open it in your computer’s PDF app to print.
+            Open Print desk and choose a standard or custom sheet size. Auto arrange packs mixed
+            print sizes into available spaces and can rotate frames without resizing them. Review
+            the sheet preview, printable-area usage, and sheet count.
           </p>
           <p>
-            Choose Actual size / 100%, one page per sheet, single-sided, and one copy. Set paper
-            type and color management in your printer driver. Mark each batch printed when it is
-            done.
+            Before opening a print job, confirm that the loaded paper matches the displayed finish,
+            pattern, and sheet size. Select matching paper size and media type in the print dialog.
+            Use Actual size / 100%, one page per sheet, single-sided, and one copy. Mark each batch
+            printed when done.
           </p>
         </article>
       </div>
