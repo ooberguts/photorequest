@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { PaperFacts } from './PaperPicker';
 import PrintConfirmation from './PrintConfirmation';
 import {
   ArrowUpRight,
@@ -35,14 +36,34 @@ type Props = {
   run: (label: string, fn: () => Promise<void>) => Promise<void>;
   busy: string;
   onAdd: () => void;
+  onManagePaper: () => void;
 };
-export default function PrintDesk({ order, completed, onCompleted, run, busy, onAdd }: Props) {
+export default function PrintDesk({
+  order,
+  completed,
+  onCompleted,
+  run,
+  busy,
+  onAdd,
+  onManagePaper,
+}: Props) {
   const [settings, setSettings] = useState<PrintSettings>(DEFAULT_PRINT);
   const [sheetUnits, setSheetUnits] = useState<'in' | 'mm'>('in');
   const [confirmPrint, setConfirmPrint] = useState(false);
   const groups = useMemo(() => printGroups(order), [order]);
   const [activeKey, setActiveKey] = useState('');
   const active = groups.find((g) => g.key === activeKey) || groups[0];
+  const stock = active?.items[0].request.paper;
+  useEffect(() => {
+    if (stock)
+      setSettings((s) => ({
+        ...s,
+        paper: 'custom',
+        customWidth: stock.paper.widthInches,
+        customHeight: stock.paper.heightInches,
+        orientation: 'auto',
+      }));
+  }, [active?.key]);
   const [pageNumber, setPageNumber] = useState(0);
   const { pages, paper, layoutError } = useMemo(() => {
     try {
@@ -83,6 +104,9 @@ export default function PrintDesk({ order, completed, onCompleted, run, busy, on
           <h1>Print desk</h1>
           <p>Prepare PDF sheets and track printing by paper finish.</p>
         </div>
+        <button className="button secondary" onClick={onManagePaper}>
+          Manage paper catalog
+        </button>
         <div className="heading-badge">
           <Printer size={17} /> {summary.prints} prints in {groups.length} paper batches
         </div>
@@ -153,6 +177,7 @@ export default function PrintDesk({ order, completed, onCompleted, run, busy, on
                 <Info size={17} />
                 <p>Holographic patterns come from your physical paper or finishing process.</p>
               </div>
+              {stock && <PaperFacts selection={stock} />}
             </div>
             <section className="sheet-panel">
               <div className="sheet-panel-heading">

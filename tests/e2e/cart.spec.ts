@@ -2,6 +2,10 @@ import { test, expect } from '@playwright/test';
 import { mkdir, readFile } from 'node:fs/promises';
 import { strFromU8, unzipSync } from 'fflate';
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('photorequest-order-mode', 'all'));
+});
+
 test('one original image has independent cart sizes, finishes and quantities through ZIP export and recovery', async ({
   page,
 }) => {

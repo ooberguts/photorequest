@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { paperSelectionSchema, fitsPaper } from './papers';
 
 export const LIMITS = {
   photos: 500,
@@ -27,10 +28,23 @@ export const requestSchema = z
     finish: z.enum(['matte', 'gloss', 'holographic']),
     holographicStyle: z.string().max(100),
     fit: z.enum(['fill', 'fit']),
+    paper: paperSelectionSchema.optional(),
   })
   .superRefine((r, ctx) => {
     if (r.finish === 'holographic' && !r.holographicStyle.trim())
       ctx.addIssue({ code: 'custom', message: 'Choose a holographic pattern.' });
+    if (r.paper) {
+      if (
+        r.paper.paper.finish !== r.finish ||
+        (r.finish === 'holographic' && r.paper.paper.holographicStyle !== r.holographicStyle)
+      )
+        ctx.addIssue({ code: 'custom', message: 'The selected paper and finish must match.' });
+      if (!fitsPaper(r, r.paper.paper))
+        ctx.addIssue({
+          code: 'custom',
+          message: 'This print is larger than the selected paper sheet.',
+        });
+    }
   });
 export type PrintRequest = z.infer<typeof requestSchema>;
 export type ImageMetadata = {

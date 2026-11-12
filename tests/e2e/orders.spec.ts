@@ -3,6 +3,10 @@ import { readFile, mkdir } from 'node:fs/promises';
 import { unzipSync, strFromU8 } from 'fflate';
 import { PDFDocument } from 'pdf-lib';
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('photorequest-order-mode', 'all'));
+});
+
 test('build, edit, save, round trip, and print a real photo order', async ({ page }) => {
   const errors: string[] = [],
     remote: string[] = [];

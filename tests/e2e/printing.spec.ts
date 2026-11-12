@@ -2,6 +2,10 @@ import { test, expect } from '@playwright/test';
 import { mkdir, readFile } from 'node:fs/promises';
 import { PDFDocument, PDFRawStream, decodePDFRawStream } from 'pdf-lib';
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('photorequest-order-mode', 'all'));
+});
+
 test('fills mixed-size gaps and updates the layout for the selected sheet', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Create a sample order' }).click();

@@ -4,6 +4,8 @@ A Tauri 2 desktop app for creating photo print orders and opening received order
 
 ## Features
 
+- Follow guided steps to add photos, choose prints, and review/export the order. Switch to **All tools** at any time for the full workspace, without changing the order.
+- Load a printer's paper catalog to choose their specific stock and see sheet sizes, costs, availability, weight, and handling notes. Printers can add/edit/remove papers and export/import the same JSON list.
 - Add JPEG, PNG, and WebP images through a file picker or drag and drop.
 - Configure multiple print sizes per image, custom dimensions in inches or millimeters, and copies per size.
 - Review every size and finish as a separate cart item. Change its quantity, edit it, add another size, or remove it without duplicating the original image.
@@ -62,10 +64,18 @@ The included GitHub Actions workflow runs checks and builds installers for Apple
 
 ## Request an order
 
-1. Open **Order studio** and name the order.
-2. Add images. Click an image's **Print specifications** button to set sizes, copies, finish, and fitting. Select multiple images to apply the same specifications in bulk.
-3. Choose **Review cart** to see all sizes and finishes. Use **Add size** beside an image to request another size, change copies directly, or edit/remove an individual item. Review DPI warnings and add any print instructions.
-4. Choose **Export order ZIP** and send that ZIP to the person printing.
+1. In **Add photos**, choose images from your computer or drop them into the upload area. Continue to **Choose prints**.
+2. Pick a size, copies, and paper. Load the printer's paper list if supplied, or specify a finish. Check the photos that should receive these choices and apply the settings. Choose **Add another size and keep existing choices** to request several sizes of the same photos.
+3. Use **Edit prints & preview** for individual photos, custom sizes, or crop previews. **Review & export** shows every requested size, independent copies, paper, and quality/cropping reminders. Give the order a name and add any instructions.
+4. Choose **Export order ZIP**, save the file, and send it to the person printing. Export a new copy after making changes.
+
+**All tools** keeps the complete workspace available for direct cart editing, bulk specifications, ordering/reordering images, and custom dimensions. The view preference is remembered; both views edit the same draft.
+
+## Share a paper catalog
+
+Open **Paper catalog** in the sidebar, or **Manage paper catalog** in Print desk. Add your stocks and sheet sizes, mark availability, enter costs per sheet and useful facts, and **Save paper list**. **Export paper list JSON** creates the file to send to customers. Customers use **Load paper list** or **Load printer’s paper list**; importing previews the list's name, available count, and currency before replacing their current catalog.
+
+Paper selections travel inside the order JSON as snapshots. Removing a paper or changing its price in a later catalog does not rewrite existing orders. Sheet cost is the cost of the physical paper; the app does not present it as the total price of an order. See [paper catalog format and usage](docs/PAPERS.md).
 
 Image numbering follows the gallery order. Use the arrows on image previews to reorder. Removing images causes the next export to use a new contiguous sequence. The original filenames are retained in `order.json`; the files on your disk are not renamed.
 

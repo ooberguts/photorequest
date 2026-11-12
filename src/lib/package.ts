@@ -41,8 +41,13 @@ export function buildManifest(order: Order): Manifest {
 }
 export async function exportOrder(order: Order): Promise<Uint8Array> {
   const manifest = buildManifest(order);
+  const json = strToU8(JSON.stringify(manifest, null, 2));
+  if (json.byteLength > 4 * 1024 * 1024)
+    throw new Error(
+      'The order details exceed 4 MB. Split the order or shorten the paper notes before exporting.',
+    );
   const entries: Zippable = {
-    'order.json': strToU8(JSON.stringify(manifest, null, 2)),
+    'order.json': json,
     'README.txt': strToU8(
       'PHOTO REQUEST - PORTABLE ORDER\n\nOpen this ZIP in PhotoRequest to review and print the order.\norder.json contains sizes in inches, quantities, finishes, original dimensions, source density (when available), and SHA-256 image checksums.\nimages/ contains the unchanged source files with sequential filenames.\nPrint desk creates separate PDFs for each paper finish. Print PDFs at Actual size / 100%, one PDF page per sheet.\nHolographic effects require the specified physical paper or finishing process; they are not digitally added.\nOriginal images retain their embedded metadata, including any location data.\n',
     ),

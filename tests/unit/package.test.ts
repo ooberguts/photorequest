@@ -3,6 +3,7 @@ import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { buildManifest, exportOrder, importOrder, unpack } from '../../src/lib/package';
 import { hash } from '../../src/lib/images';
 import { newOrder, newRequest, type Photo } from '../../src/lib/model';
+import { newCatalog, newPaper, selectPaper } from '../../src/lib/papers';
 
 // Unit tests isolate archive validation; browser tests exercise real image decoding.
 vi.mock('../../src/lib/images', async (original) => ({
@@ -57,6 +58,19 @@ describe('portable orders', () => {
     expect(restored.photos[0].data).toEqual(order.photos[0].data);
     expect(restored.photos[0].requests[0].widthInches).toBe(4);
     expect(restored.photos[0].requests[0].quantity).toBe(1);
+    URL.revokeObjectURL(restored.photos[0].url);
+  });
+  it('preserves the exact paper snapshot through a ZIP round trip', async () => {
+    const order = await fixture();
+    const paper = {
+      ...newPaper(),
+      name: 'Printer matte',
+      costPerSheet: 0.35,
+      notes: 'Let ink dry before stacking.',
+    };
+    order.photos[0].requests[0].paper = selectPaper(newCatalog(), paper);
+    const restored = await importOrder(await exportOrder(order));
+    expect(restored.photos[0].requests[0].paper).toEqual(order.photos[0].requests[0].paper);
     URL.revokeObjectURL(restored.photos[0].url);
   });
   it('rejects modified image bytes', async () => {

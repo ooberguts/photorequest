@@ -80,3 +80,7 @@ The app does not extract arbitrary archive entries to the filesystem. It bounds 
 Checksums detect accidental corruption and mismatched files. They do not authenticate the sender. Limits are 500 images, 100 MB per image, 80 megapixels per image, 512 MB of original bytes per order, and 5,000 requested prints.
 
 Native batch-print progress is local workspace state and is not exported into the portable order. Importing a ZIP starts a new print checklist.
+
+## Optional paper selection
+
+A print request can include a `paper` snapshot containing `catalogId`, `catalogName`, `printerName`, `currency`, and a full paper record. See [paper catalogs](PAPERS.md) and the generated catalog schema for stock fields. The selected finish/pattern must match the print request and the requested dimensions must fit the physical sheet. This optional addition retains schema version 1 for existing size/finish-only orders. Updated apps preserve the snapshot through import/export and do not rewrite it when the separate catalog changes. Older apps may discard this optional metadata when re-exporting.

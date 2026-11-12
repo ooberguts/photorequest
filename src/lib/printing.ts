@@ -91,8 +91,23 @@ export function printGroups(order: Order): PrintGroup[] {
       const key = JSON.stringify([
         request.finish,
         request.finish === 'holographic' ? request.holographicStyle : '',
+        ...(request.paper
+          ? [
+              request.paper.catalogId,
+              request.paper.paper.id,
+              request.paper.paper.name,
+              request.paper.paper.widthInches,
+              request.paper.paper.heightInches,
+            ]
+          : []),
       ]);
-      const group = groups.get(key) || { key, label: finishLabel(request), items: [] };
+      const group = groups.get(key) || {
+        key,
+        label: request.paper
+          ? `${request.paper.paper.name} · ${finishLabel(request)}`
+          : finishLabel(request),
+        items: [],
+      };
       for (let copy = 0; copy < request.quantity; copy++)
         group.items.push({ photo, request, copy: copy + 1, index });
       groups.set(key, group);
@@ -104,6 +119,19 @@ export function printGroups(order: Order): PrintGroup[] {
 /** Preview and PDF output use the same exact-size, paper-aware layout. */
 export function layoutGroup(group: PrintGroup, settings: PrintSettings): PrintPage[] {
   const paper = paperSize(settings);
+  const stock = group.items[0]?.request.paper?.paper;
+  if (
+    stock &&
+    (Math.abs(
+      Math.min(paper.width, paper.height) - Math.min(stock.widthInches, stock.heightInches),
+    ) > 0.001 ||
+      Math.abs(
+        Math.max(paper.width, paper.height) - Math.max(stock.widthInches, stock.heightInches),
+      ) > 0.001)
+  )
+    throw new Error(
+      `This batch requests ${stock.name} on ${stock.widthInches} × ${stock.heightInches} in sheets. Select the matching sheet size.`,
+    );
   if (
     !Number.isFinite(settings.margin) ||
     settings.margin < 0 ||

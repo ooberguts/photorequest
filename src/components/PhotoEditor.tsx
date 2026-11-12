@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Crop, Expand, Plus, Trash2, X, ArrowUpRight, Info } from 'lucide-react';
+import PaperPicker from './PaperPicker';
+import type { PaperCatalog } from '../lib/papers';
 import {
   HOLOGRAPHIC,
   SIZES,
@@ -23,6 +25,7 @@ type Props = {
   initialRequestId?: string;
   addSize?: boolean;
   maxPrints?: number;
+  catalog?: PaperCatalog | null;
 };
 export default function PhotoEditor({
   photo,
@@ -34,6 +37,7 @@ export default function PhotoEditor({
   initialRequestId,
   addSize,
   maxPrints = 5000,
+  catalog = null,
 }: Props) {
   const [requests, setRequests] = useState(() => {
     const requests = photo.requests.map((r) => ({ ...r }));
@@ -50,6 +54,7 @@ export default function PhotoEditor({
         finish: first.finish,
         holographicStyle: first.holographicStyle,
         fit: first.fit,
+        paper: first.paper,
       });
     }
     return requests;
@@ -77,7 +82,19 @@ export default function PhotoEditor({
   }, [active]);
   const req = requests[Math.min(active, requests.length - 1)];
   const update = (index: number, patch: Partial<PrintRequest>) =>
-    setRequests((prev) => prev.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+    setRequests((prev) =>
+      prev.map((r, i) =>
+        i === index
+          ? {
+              ...r,
+              ...(('finish' in patch || 'holographicStyle' in patch) && !('paper' in patch)
+                ? { paper: undefined }
+                : {}),
+              ...patch,
+            }
+          : r,
+      ),
+    );
   const dims = orientedSize(photo, req);
   const dpi = effectiveDpi(photo, req);
   const grade = quality(dpi, targetDpi);
@@ -273,7 +290,15 @@ export default function PhotoEditor({
                   />
                 </label>
               </div>
-              <label>Paper finish</label>
+              <PaperPicker
+                request={r}
+                catalog={catalog}
+                label={`Print ${index + 1} printer paper`}
+                onChange={(patch) => update(index, patch)}
+              />
+              <label>
+                Paper finish{r.paper ? ' · choosing a finish below clears the specific paper' : ''}
+              </label>
               <div className="finish-options">
                 {(['matte', 'gloss', 'holographic'] as const).map((f) => (
                   <button

@@ -2,6 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { BUILD } from './lib/build';
 import AppUpdates from './components/AppUpdates';
 import OrderCart from './components/OrderCart';
+import GuidedOrder from './components/GuidedOrder';
+import PaperCatalogManager from './components/PaperCatalog';
+import {
+  CATALOG_KEY,
+  MAX_CATALOG_BYTES,
+  loadCatalog,
+  parseCatalog,
+  serializeCatalog,
+  type PaperCatalog,
+} from './lib/papers';
 import { isTauri } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import {
@@ -49,6 +59,7 @@ import {
   safeName,
   sizeLabel,
   stats,
+  requestSchema,
   type Order,
   type Photo,
   type PrintRequest,
@@ -58,7 +69,7 @@ import { exportOrder, importOrder } from './lib/package';
 import { loadDraft, saveDraft } from './lib/storage';
 import { saveFile } from './lib/files';
 
-type View = 'studio' | 'print' | 'guide';
+type View = 'studio' | 'print' | 'guide' | 'papers';
 type Confirmation = {
   title: string;
   body: string;
@@ -124,6 +135,11 @@ function Confirm({ value, onClose }: { value: Confirmation; onClose: () => void 
 export default function App() {
   const [order, setOrderValue] = useState<Order>(newOrder);
   const [view, setView] = useState<View>('studio');
+  const [guided, setGuided] = useState(
+    () => localStorage.getItem('photorequest-order-mode') !== 'all',
+  );
+  const [catalog, setCatalog] = useState<PaperCatalog | null>(null);
+  const catalogInput = useRef<HTMLInputElement>(null);
   const [hydrated, setHydrated] = useState(false);
   const [saved, setSaved] = useState('Opening local draft…');
   const [completed, setCompletedValue] = useState<string[]>([]);
@@ -153,6 +169,51 @@ export default function App() {
   function setCompleted(value: Parameters<typeof setCompletedValue>[0]) {
     setSaved('Saving draft…');
     setCompletedValue(value);
+  }
+  useEffect(() => {
+    try {
+      setCatalog(loadCatalog());
+    } catch {
+      setToast({
+        message:
+          'The saved paper list could not be read. Import a paper list again; your order is unchanged.',
+        error: true,
+      });
+    }
+  }, []);
+  function saveCatalog(value: PaperCatalog) {
+    try {
+      const json = serializeCatalog(value);
+      if (new TextEncoder().encode(json).byteLength > MAX_CATALOG_BYTES)
+        throw new Error('The paper list exceeds 1 MB. Shorten the notes or use fewer entries.');
+      localStorage.setItem(CATALOG_KEY, json);
+      setCatalog(parseCatalog(json));
+      return true;
+    } catch (error) {
+      setToast({
+        message: error instanceof Error ? error.message : 'The paper list could not be saved.',
+        error: true,
+      });
+      return false;
+    }
+  }
+  async function importCatalog(file: File) {
+    await run('Reading paper list…', async () => {
+      if (file.size > MAX_CATALOG_BYTES) throw new Error('Choose a paper list smaller than 1 MB.');
+      const next = parseCatalog(await file.text());
+      setConfirmation({
+        title: 'Load this printer’s paper list?',
+        body: `${next.name}${next.printerName ? ` from ${next.printerName}` : ''}: ${next.papers.filter((p) => p.available).length} available paper types, costs in ${next.currency}. This replaces the paper list on this computer. Existing orders keep their saved paper choices.`,
+        label: 'Use paper list',
+        action: () => {
+          if (saveCatalog(next))
+            setToast({
+              message: 'Paper list loaded. Choose a paper in your print settings.',
+              error: false,
+            });
+        },
+      });
+    });
   }
 
   useEffect(() => {
@@ -254,6 +315,50 @@ export default function App() {
     setSelected(new Set());
     setCompleted([]);
     setEditing([]);
+  }
+  function makeSample() {
+    void run('Creating a sample order…', async () => {
+      replaceOrder({
+        ...newOrder(),
+        name: 'Sample print order',
+        customer: 'Sample customer',
+        photos: await samplePhotos(),
+        notes:
+          'Sample artwork generated locally. Try changing a size, choosing a paper finish, and exporting this order.',
+      });
+    });
+  }
+  function applyGuided(ids: string[], request: PrintRequest, append: boolean) {
+    const parsed = requestSchema.safeParse(request);
+    if (!parsed.success) {
+      setToast({ message: parsed.error.issues[0].message, error: true });
+      return false;
+    }
+    const photos = order.photos.map((photo) =>
+      ids.includes(photo.id)
+        ? {
+            ...photo,
+            requests: [
+              ...(append ? photo.requests : []),
+              { ...parsed.data, id: crypto.randomUUID() },
+            ],
+          }
+        : photo,
+    );
+    if (
+      photos.some((p) => p.requests.length > 100) ||
+      photos.reduce((n, p) => n + p.requests.reduce((s, r) => s + r.quantity, 0), 0) > LIMITS.prints
+    ) {
+      setToast({
+        message:
+          'Use at most 100 print choices per photo and 5,000 total prints. Nothing was changed.',
+        error: true,
+      });
+      return false;
+    }
+    setOrder((o) => ({ ...o, photos }));
+    setCompleted([]);
+    return true;
   }
   async function addFiles(files: File[]) {
     if (!files.length) return;
@@ -472,9 +577,26 @@ export default function App() {
 
   const editorPhoto = order.photos.find((p) => p.id === editing[0]);
   const viewName =
-    view === 'studio' ? 'Order studio' : view === 'print' ? 'Print desk' : 'How it works';
+    view === 'studio'
+      ? 'Order studio'
+      : view === 'print'
+        ? 'Print desk'
+        : view === 'papers'
+          ? 'Paper catalog'
+          : 'How it works';
   return (
     <div className="app-shell">
+      <input
+        className="visually-hidden"
+        type="file"
+        ref={catalogInput}
+        accept=".json,application/json"
+        aria-label="Choose paper catalog JSON"
+        onChange={(e) => {
+          if (e.target.files?.[0]) void importCatalog(e.target.files[0]);
+          e.target.value = '';
+        }}
+      />
       <input
         className="visually-hidden"
         type="file"
@@ -529,6 +651,9 @@ export default function App() {
           </button>
           <button className={view === 'guide' ? 'active' : ''} onClick={() => setView('guide')}>
             <BookOpen size={18} /> How it works
+          </button>
+          <button className={view === 'papers' ? 'active' : ''} onClick={() => setView('papers')}>
+            <FileJson size={18} /> Paper catalog
           </button>
         </nav>
         <div className="sidebar-order">
@@ -596,7 +721,45 @@ export default function App() {
           </div>
         </header>
         <main>
-          {view === 'guide' ? (
+          {view === 'studio' && (
+            <div className="order-mode">
+              <span>Order view</span>
+              <div className="segmented">
+                <button
+                  aria-pressed={guided}
+                  className={guided ? 'selected' : ''}
+                  onClick={() => {
+                    setGuided(true);
+                    localStorage.setItem('photorequest-order-mode', 'guided');
+                  }}
+                >
+                  Guided steps
+                </button>
+                <button
+                  aria-pressed={!guided}
+                  className={!guided ? 'selected' : ''}
+                  onClick={() => {
+                    setGuided(false);
+                    localStorage.setItem('photorequest-order-mode', 'all');
+                  }}
+                >
+                  All tools
+                </button>
+              </div>
+              <button className="text-button" onClick={() => catalogInput.current?.click()}>
+                <Upload size={14} /> Load paper list
+              </button>
+            </div>
+          )}
+          <div hidden={view !== 'papers'}>
+            <PaperCatalogManager
+              key={catalog ? `${catalog.id}-${catalog.updatedAt}` : 'new'}
+              value={catalog}
+              onSave={saveCatalog}
+              onImport={() => catalogInput.current?.click()}
+            />
+          </div>
+          {view === 'papers' ? null : view === 'guide' ? (
             <Guide />
           ) : view === 'print' ? (
             <PrintDesk
@@ -610,6 +773,38 @@ export default function App() {
               run={run}
               busy={busy}
               onAdd={() => setView('studio')}
+              onManagePaper={() => setView('papers')}
+            />
+          ) : guided ? (
+            <GuidedOrder
+              order={order}
+              catalog={catalog}
+              ready={hydrated}
+              busy={!!busy}
+              onAdd={() => imageInput.current?.click()}
+              onFiles={(files) => void addFiles(files)}
+              onSample={makeSample}
+              onImportCatalog={() => catalogInput.current?.click()}
+              onChange={updateOrder}
+              onApply={applyGuided}
+              onEditPhoto={(id) => {
+                setEditorMode({});
+                setEditing([id]);
+              }}
+              onExport={requestExport}
+              cart={{
+                onEdit: (photoId, requestId) => {
+                  setEditorMode({ initialRequestId: requestId });
+                  setEditing([photoId]);
+                },
+                onAddSize: (photoId) => {
+                  setEditorMode({ addSize: true });
+                  setEditing([photoId]);
+                },
+                onQuantity: setCartQuantity,
+                onRemove: removeCartItem,
+                onRemovePhoto: (photoId) => removePhotos([photoId]),
+              }}
             />
           ) : (
             <>
@@ -1136,6 +1331,7 @@ export default function App() {
           key={editing.join(',')}
           photo={editorPhoto}
           {...editorMode}
+          catalog={catalog}
           maxPrints={
             LIMITS.prints -
             order.photos

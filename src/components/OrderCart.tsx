@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Pencil, Plus, ShoppingCart, Trash2 } from 'lucide-react';
+import { sheetCost } from '../lib/papers';
 import {
   effectiveDpi,
   finishLabel,
@@ -13,6 +14,7 @@ import {
 type Props = {
   order: Order;
   units: 'in' | 'mm';
+  friendlyNames?: boolean;
   onEdit: (photoId: string, requestId: string) => void;
   onAddSize: (photoId: string) => void;
   onQuantity: (photoId: string, requestId: string, quantity: number) => boolean;
@@ -73,6 +75,7 @@ function CartQuantity({
 export default function OrderCart({
   order,
   units,
+  friendlyNames = false,
   onEdit,
   onAddSize,
   onQuantity,
@@ -101,8 +104,12 @@ export default function OrderCart({
           <div className="cart-photo-heading">
             <img src={photo.url} alt="" />
             <div>
-              <strong>{photoName(index)}</strong>
-              <span title={photo.originalName}>{photo.originalName}</span>
+              <strong title={photo.originalName}>
+                {friendlyNames ? photo.originalName : photoName(index)}
+              </strong>
+              <span title={photo.originalName}>
+                {friendlyNames ? photoName(index) : photo.originalName}
+              </span>
             </div>
             <span className="cart-photo-count">
               {photo.requests.length}{' '}
@@ -151,6 +158,12 @@ export default function OrderCart({
                       </td>
                       <td>
                         <span className={`finish-dot ${request.finish}`} /> {finishLabel(request)}
+                        {request.paper && (
+                          <span className="cart-paper-stock">
+                            {request.paper.paper.name}
+                            <small>{sheetCost(request.paper.paper, request.paper.currency)}</small>
+                          </span>
+                        )}
                       </td>
                       <td>
                         <CartQuantity
@@ -167,11 +180,13 @@ export default function OrderCart({
                       <td>
                         <div className="cart-row-actions">
                           <button
-                            className="icon-button small"
+                            className={friendlyNames ? 'text-button' : 'icon-button small'}
                             aria-label={`Edit ${label}`}
+                            title="Edit this print size"
                             onClick={() => onEdit(photo.id, request.id)}
                           >
                             <Pencil size={14} />
+                            {friendlyNames && 'Edit'}
                           </button>
                           <button
                             className="icon-button small"

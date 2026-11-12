@@ -1,8 +1,11 @@
 # Project checkpoint — November 11, 2026
 
-The requested pause has ended. This checkpoint completes the multi-size cart and fixes signed release publication.
+The requested pause has ended. This checkpoint includes the multi-size cart, working signed releases, guided customer ordering, and portable paper catalogs.
 
 ## Current behavior
+
+- Customer ordering defaults to three guided steps: Add photos, Choose prints, Review & export. All tools preserves the full workspace and edits the same order.
+- Paper catalog manages available stocks, sizes, costs, and useful facts; printers export JSON and customers import it. Chosen stock details are snapshotted into each print request. See [PAPERS.md](PAPERS.md). Broader printer UI and final-price calculations are deferred.
 
 - One original image can have multiple cart items with independent sizes, quantities, finishes, holographic patterns, and fitting.
 - **Review cart** scrolls to the cart. **Add size** opens a new size; editing an item focuses its existing specification. Removing one size keeps the others. Removing the last size asks before removing the image.
@@ -23,7 +26,7 @@ The requested pause has ended. This checkpoint completes the multi-size cart and
 
 ## Validation
 
-- Production build, 39 unit tests, 11 browser workflows, schema consistency, and formatting checks passed locally.
+- Production build, 45 unit tests, 14 browser workflows, both generated schema checks, and formatting passed. Guided-order/catalog coverage includes the customer walkthrough, catalog editing and exchange, validation, snapshots, and stock-specific print batches.
 - Cart browser coverage includes independent sizes/finishes/copies, correct editor selection, cancellation, recovery, ZIP contents without duplicate originals, item removal, invalid quantities, and the full order limit.
 - Release lookup was checked against the existing unpublished GitHub draft. Regression tests cover paginated drafts, missing releases, API errors, and duplicate drafts.
 - Existing updater tests check saving before installation and credential isolation. Native signature verification previously accepted the real package and rejected modified bytes.

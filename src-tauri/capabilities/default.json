@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main-capability",
-  "description": "Save ZIP and PDF files only to paths selected through a native Save dialog.",
+  "description": "Save ZIP, PDF, and paper catalog JSON files only to paths selected through a native Save dialog.",
   "windows": ["main"],
   "permissions": [
     "core:default",

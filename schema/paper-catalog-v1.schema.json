@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "format": { "type": "string", "const": "photorequest-paper-catalog" },
+    "schemaVersion": { "type": "number", "const": 1 },
+    "id": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "printerName": { "default": "", "type": "string", "maxLength": 160 },
+    "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+    },
+    "papers": {
+      "maxItems": 250,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "finish": { "type": "string", "enum": ["matte", "gloss", "holographic"] },
+          "holographicStyle": { "default": "", "type": "string", "maxLength": 100 },
+          "widthInches": { "type": "number", "minimum": 1, "maximum": 60 },
+          "heightInches": { "type": "number", "minimum": 1, "maximum": 60 },
+          "costPerSheet": {
+            "default": null,
+            "anyOf": [{ "type": "number", "minimum": 0, "maximum": 100000 }, { "type": "null" }]
+          },
+          "available": { "default": true, "type": "boolean" },
+          "brand": { "default": "", "type": "string", "maxLength": 160 },
+          "productCode": { "default": "", "type": "string", "maxLength": 160 },
+          "description": { "default": "", "type": "string", "maxLength": 1000 },
+          "weightGsm": {
+            "default": null,
+            "anyOf": [
+              { "type": "number", "exclusiveMinimum": 0, "maximum": 2000 },
+              { "type": "null" }
+            ]
+          },
+          "thicknessMicrons": {
+            "default": null,
+            "anyOf": [
+              { "type": "number", "exclusiveMinimum": 0, "maximum": 5000 },
+              { "type": "null" }
+            ]
+          },
+          "doubleSided": { "default": false, "type": "boolean" },
+          "borderless": { "default": false, "type": "boolean" },
+          "printerCompatibility": { "default": "", "type": "string", "maxLength": 500 },
+          "recommendedUse": { "default": "", "type": "string", "maxLength": 500 },
+          "notes": { "default": "", "type": "string", "maxLength": 1000 }
+        },
+        "required": ["id", "name", "finish", "widthInches", "heightInches"]
+      }
+    }
+  },
+  "required": ["format", "schemaVersion", "id", "name", "currency", "updatedAt", "papers"],
+  "$id": "urn:photorequest:paper-catalog:v1",
+  "title": "PhotoRequest paper catalog v1"
+}

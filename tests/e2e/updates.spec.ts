@@ -1,5 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('photorequest-order-mode', 'all'));
+});
+
 async function nativeMock(page: Page, scenario: 'available' | 'auth_required') {
   await page.addInitScript(
     ({ scenario }) => {

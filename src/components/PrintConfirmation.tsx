@@ -45,6 +45,15 @@ export default function PrintConfirmation({
           requesting the same paper size and media type.
         </p>
         <dl className="required-paper">
+          {request.paper && (
+            <div>
+              <dt>Required paper stock</dt>
+              <dd>
+                {request.paper.paper.name}
+                {request.paper.paper.productCode ? ` · ${request.paper.paper.productCode}` : ''}
+              </dd>
+            </div>
+          )}
           <div>
             <dt>Required paper finish</dt>
             <dd>

@@ -6,20 +6,35 @@ import { blobOf } from './images';
 export async function saveFile(
   data: Uint8Array,
   filename: string,
-  type: 'zip' | 'pdf',
+  type: 'zip' | 'pdf' | 'json',
 ): Promise<boolean> {
   if (isTauri()) {
     const path = await save({
       defaultPath: filename,
       filters: [
-        { name: type === 'zip' ? 'PhotoRequest order' : 'Print-ready PDF', extensions: [type] },
+        {
+          name:
+            type === 'zip'
+              ? 'PhotoRequest order'
+              : type === 'json'
+                ? 'Printer paper list'
+                : 'Print-ready PDF',
+          extensions: [type],
+        },
       ],
     });
     if (!path) return false;
     await writeFile(path, data);
   } else {
     const url = URL.createObjectURL(
-      blobOf(data, type === 'pdf' ? 'application/pdf' : 'application/zip'),
+      blobOf(
+        data,
+        type === 'pdf'
+          ? 'application/pdf'
+          : type === 'json'
+            ? 'application/json'
+            : 'application/zip',
+      ),
     );
     const a = document.createElement('a');
     a.href = url;
