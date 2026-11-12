@@ -20,10 +20,46 @@ type Props = {
   units: 'in' | 'mm';
   onClose: () => void;
   onSave: (requests: PrintRequest[]) => void;
+  initialRequestId?: string;
+  addSize?: boolean;
 };
-export default function PhotoEditor({ photo, count, targetDpi, units, onClose, onSave }: Props) {
-  const [requests, setRequests] = useState(() => photo.requests.map((r) => ({ ...r })));
-  const [active, setActive] = useState(0);
+export default function PhotoEditor({
+  photo,
+  count,
+  targetDpi,
+  units,
+  onClose,
+  onSave,
+  initialRequestId,
+  addSize,
+}: Props) {
+  const [requests, setRequests] = useState(() => {
+    const requests = photo.requests.map((r) => ({ ...r }));
+    if (addSize) {
+      const size =
+        SIZES.find(
+          (s) => !requests.some((r) => r.widthInches === s.width && r.heightInches === s.height),
+        ) || SIZES[0];
+      const first = requests[0];
+      requests.push({
+        ...newRequest(),
+        widthInches: size.width,
+        heightInches: size.height,
+        finish: first.finish,
+        holographicStyle: first.holographicStyle,
+        fit: first.fit,
+      });
+    }
+    return requests;
+  });
+  const [active, setActive] = useState(() =>
+    addSize
+      ? photo.requests.length
+      : Math.max(
+          0,
+          photo.requests.findIndex((r) => r.id === initialRequestId),
+        ),
+  );
   const [error, setError] = useState('');
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BUILD } from './lib/build';
 import AppUpdates from './components/AppUpdates';
+import OrderCart from './components/OrderCart';
 import { isTauri } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import {
@@ -131,6 +132,9 @@ export default function App() {
   const [units, setUnits] = useState<'in' | 'mm'>('in');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<string[]>([]);
+  const [editorMode, setEditorMode] = useState<{ initialRequestId?: string; addSize?: boolean }>(
+    {},
+  );
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [dragging, setDragging] = useState(false);
   const imageInput = useRef<HTMLInputElement>(null),
@@ -395,6 +399,44 @@ export default function App() {
       ),
     }));
     setEditing([]);
+    setEditorMode({});
+    setCompleted([]);
+  }
+  function setCartQuantity(photoId: string, requestId: string, quantity: number) {
+    const photo = order.photos.find((p) => p.id === photoId),
+      request = photo?.requests.find((r) => r.id === requestId);
+    if (!request || !Number.isInteger(quantity) || quantity < 1 || quantity > 999) return false;
+    if (summary.prints - request.quantity + quantity > LIMITS.prints) {
+      setToast({
+        message: 'An order can contain up to 5,000 prints. This quantity was not changed.',
+        error: true,
+      });
+      return false;
+    }
+    setOrder((o) => ({
+      ...o,
+      photos: o.photos.map((p) =>
+        p.id === photoId
+          ? { ...p, requests: p.requests.map((r) => (r.id === requestId ? { ...r, quantity } : r)) }
+          : p,
+      ),
+    }));
+    setCompleted([]);
+    return true;
+  }
+  function removeCartItem(photoId: string, requestId: string) {
+    const photo = order.photos.find((p) => p.id === photoId);
+    if (!photo) return;
+    if (photo.requests.length === 1) {
+      removePhotos([photoId]);
+      return;
+    }
+    setOrder((o) => ({
+      ...o,
+      photos: o.photos.map((p) =>
+        p.id === photoId ? { ...p, requests: p.requests.filter((r) => r.id !== requestId) } : p,
+      ),
+    }));
     setCompleted([]);
   }
   function movePhoto(index: number, delta: number) {
@@ -887,6 +929,21 @@ export default function App() {
                       your order.
                     </span>
                   </div>
+                  <OrderCart
+                    order={order}
+                    units={units}
+                    onEdit={(photoId, requestId) => {
+                      setEditorMode({ initialRequestId: requestId });
+                      setEditing([photoId]);
+                    }}
+                    onAddSize={(photoId) => {
+                      setEditorMode({ addSize: true });
+                      setEditing([photoId]);
+                    }}
+                    onQuantity={setCartQuantity}
+                    onRemove={removeCartItem}
+                    onRemovePhoto={(photoId) => removePhotos([photoId])}
+                  />
                   <section className="order-notes panel">
                     <div className="section-label">
                       <h3>Print instructions</h3>
@@ -1066,10 +1123,14 @@ export default function App() {
         <PhotoEditor
           key={editing.join(',')}
           photo={editorPhoto}
+          {...editorMode}
           count={editing.length}
           targetDpi={order.targetDpi}
           units={units}
-          onClose={() => setEditing([])}
+          onClose={() => {
+            setEditing([]);
+            setEditorMode({});
+          }}
           onSave={saveSpecifications}
         />
       )}
