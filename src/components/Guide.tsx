@@ -1,3 +1,4 @@
+import { openInstallationHelp } from './StartupSupport';
 import {
   ArrowDownToLine,
   ArrowRight,
@@ -180,6 +181,9 @@ export default function Guide() {
         </div>
       </div>
       <div className="workflow-strip">
+        <button className="text-button" onClick={() => void openInstallationHelp()}>
+          Installation & troubleshooting
+        </button>
         <span>
           <Check size={15} /> macOS + Windows
         </span>

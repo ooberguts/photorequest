@@ -132,15 +132,46 @@ pub async fn check_app_update(
         .pending
         .lock()
         .map_err(|_| "Updater is busy.".to_string())? = None;
-    let auth_app = app.clone();
-    let (token, source) = tauri::async_runtime::spawn_blocking(move || credential(&auth_app))
-        .await
-        .map_err(|_| "Could not read GitHub sign-in.".to_string())?;
     let client = reqwest::Client::builder()
         .user_agent("PhotoRequest updater")
         .timeout(Duration::from_secs(25))
         .build()
         .map_err(|_| "Could not initialize update checking.".to_string())?;
+    // A public release must work on a clean computer with no GitHub CLI,
+    // saved credentials, or keychain prompts. Credentials are only a fallback.
+    let mut token = None;
+    let mut source = "public";
+    let mut repo = client
+        .get(API)
+        .header("Accept", "application/vnd.github+json")
+        .send()
+        .await
+        .map_err(|_| "Cannot reach GitHub. Your order remains available offline.".to_string())?;
+    if [401, 403, 404].contains(&repo.status().as_u16()) {
+        let auth_app = app.clone();
+        (token, source) = tauri::async_runtime::spawn_blocking(move || credential(&auth_app))
+            .await
+            .map_err(|_| "Could not read optional GitHub sign-in.".to_string())?;
+        if let Some(ref token) = token {
+            repo = client
+                .get(API)
+                .header("Accept", "application/vnd.github+json")
+                .bearer_auth(token)
+                .send()
+                .await
+                .map_err(|_| {
+                    "Cannot reach GitHub. Your order remains available offline.".to_string()
+                })?;
+        }
+    }
+    if repo.status() == 403
+        && repo
+            .headers()
+            .get("x-ratelimit-remaining")
+            .is_some_and(|value| value == "0")
+    {
+        return Err("GitHub's update-check limit has been reached. Keep working and try again later. No additional software is required.".into());
+    }
     let get = |url: String| {
         let request = client
             .get(url)
@@ -151,12 +182,8 @@ pub async fn check_app_update(
             request
         }
     };
-    let repo = get(API.into())
-        .send()
-        .await
-        .map_err(|_| "Cannot reach GitHub. Your order remains available offline.".to_string())?;
     if [401, 403, 404].contains(&repo.status().as_u16()) {
-        return Ok(result("auth_required", source, "Sign in with GitHub CLI or save a GitHub token with Contents: read access to ooberguts/photorequest."));
+        return Ok(result("auth_required", source, "GitHub could not provide access to this release. Public releases normally need no sign-in. Try again later, or use the optional access settings if the repository has become private."));
     }
     if !repo.status().is_success() {
         return Err(format!(

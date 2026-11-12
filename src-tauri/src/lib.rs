@@ -3,6 +3,7 @@ use tauri::{
     ipc::{InvokeBody, Request},
     Manager,
 };
+mod startup;
 mod updates;
 
 /// Only accepts PDF bytes, never a caller-provided path or shell command.
@@ -44,7 +45,7 @@ fn open_print_pdf(app: tauri::AppHandle, request: Request<'_>) -> Result<(), Str
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -55,8 +56,15 @@ pub fn run() {
             updates::check_app_update,
             updates::save_update_token,
             updates::forget_update_token,
-            updates::install_app_update
+            updates::install_app_update,
+            startup::open_install_help
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running PhotoRequest");
+        .build(tauri::generate_context!());
+    match app {
+        Ok(app) => app.run(|_, _| {}),
+        Err(error) => {
+            startup::report_failure(&error.to_string());
+            std::process::exit(1);
+        }
+    }
 }

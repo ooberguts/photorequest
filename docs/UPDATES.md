@@ -1,6 +1,6 @@
 # GitHub updates and commit versions
 
-The installed application checks signed releases from the private `ooberguts/photorequest` GitHub repository. Photo creation, ZIP import/export, and PDF printing continue to work offline.
+The installed application checks signed releases from the public `ooberguts/photorequest` GitHub repository. Photo creation, ZIP import/export, and PDF printing continue to work offline.
 
 ## Using updates
 
@@ -10,13 +10,13 @@ When a newer signed release is available, choose **Install and restart**. The ap
 
 The first copy with this updater must be installed manually. Older 0.1/0.2 applications have no update code to fetch it themselves.
 
-## Private GitHub access
+## Public updates and optional access
 
-Each person must have access to the private repository. The native updater first looks for a token explicitly saved in the operating system credential store. Otherwise, it uses an existing `gh auth login` sign-in from the official GitHub CLI when available.
+Public updates need no account, GitHub CLI, or saved token. The updater first uses unauthenticated HTTPS requests. If access is restricted, it can fall back to an existing saved token in the OS credential store or an existing GitHub CLI sign-in. It does not install GitHub tools or open the credential store during a normal public check. GitHub rate limits produce a retry-later message; the order remains usable offline.
 
-If GitHub CLI is unavailable, create a fine-grained GitHub token scoped to `ooberguts/photorequest` with **Contents: read**. Save it in the Updates panel. The app validates repository access before saving. macOS uses Keychain; Windows uses Credential Manager. Credentials are never bundled with the application, included in a ZIP, returned by the native updater to the interface, or stored in browser local storage. **Remove saved token** deletes that app-specific entry; a separate GitHub CLI login remains owned by GitHub CLI.
+**Optional GitHub access settings** remain available for restricted repositories or rate-limit situations. A fine-grained token can be scoped to `ooberguts/photorequest` with **Contents: read**. Saving validates access and uses macOS Keychain or Windows Credential Manager. Credentials are not included in an order, exposed to the interface after saving, or stored in browser local storage. Removing a saved token does not sign out a separate GitHub CLI installation.
 
-The updater uses authenticated GitHub release-asset API URLs, including for the manifest. A private repository does not require making the source or installers public. Image files and orders are not sent to GitHub.
+Release assets use GitHub's asset API with HTTPS and package-signature verification; public assets need no Authorization header. Images and orders are never uploaded to GitHub. See [installation help](../public/INSTALLATION.txt) for the runtime installed on Windows and the Mac OS requirement.
 
 ## Commit-based versions
 

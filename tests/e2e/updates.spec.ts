@@ -4,7 +4,7 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('photorequest-order-mode', 'all'));
 });
 
-async function nativeMock(page: Page, scenario: 'available' | 'auth_required') {
+async function nativeMock(page: Page, scenario: 'available' | 'auth_required' | 'public') {
   await page.addInitScript(
     ({ scenario }) => {
       const w = window as unknown as Record<string, any>;
@@ -43,7 +43,11 @@ async function nativeMock(page: Page, scenario: 'available' | 'auth_required') {
               };
             return {
               status: 'available',
-              credentialSource: w.savedToken ? 'saved_token' : 'github_cli',
+              credentialSource: w.savedToken
+                ? 'saved_token'
+                : w.updateScenario === 'public'
+                  ? 'public'
+                  : 'github_cli',
               message: 'A signed update is available.',
               version: '0.3.11',
               commit: '2'.repeat(40),
@@ -149,4 +153,19 @@ test('browser preview explains that updates require the desktop app', async ({ p
   const dialog = page.getByRole('dialog', { name: 'Updates', exact: true });
   await expect(dialog).toContainText('Install the desktop app to use automatic updates.');
   await expect(dialog.getByRole('button', { name: 'Check for updates' })).toBeDisabled();
+});
+
+test('public updates need no sign-in or additional software on a clean install', async ({
+  page,
+}) => {
+  await nativeMock(page, 'public');
+  await page.goto('/');
+  await page.getByRole('button', { name: /^Updates/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Updates', exact: true });
+  await expect(dialog).toContainText(
+    'Public updates work without a GitHub account or additional software.',
+  );
+  await expect(dialog.getByRole('button', { name: 'Install and restart' })).toBeEnabled();
+  await expect(dialog.getByLabel('GitHub update token')).not.toBeVisible();
+  await expect(dialog.locator('.update-auth')).not.toHaveAttribute('open');
 });

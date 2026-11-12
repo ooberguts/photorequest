@@ -6,7 +6,7 @@ import { BUILD, type BuildInfo } from '../lib/build';
 
 type UpdateResult = {
   status: 'current' | 'available' | 'auth_required' | 'no_release';
-  credentialSource: 'saved_token' | 'github_cli' | 'none';
+  credentialSource: 'public' | 'saved_token' | 'github_cli' | 'none';
   message: string;
   version?: string;
   commit?: string;
@@ -171,15 +171,20 @@ function UpdateDialog({
           Signed updates are downloaded from GitHub. Install and restart saves your active order
           first. Your images and orders are not uploaded.
         </p>
-        <section className="update-auth">
-          <h3>Private repository access</h3>
+        <p className="micro-note">
+          Public updates work without a GitHub account or additional software.
+        </p>
+        <details
+          className="update-auth"
+          open={result?.status === 'auth_required' || result?.credentialSource === 'saved_token'}
+        >
+          <summary>Optional GitHub access settings</summary>
           <p>
             {result?.credentialSource === 'github_cli'
               ? 'Using your existing GitHub CLI sign-in.'
               : result?.credentialSource === 'saved_token'
                 ? 'Using a token saved in your system credential store.'
-                : 'Use an existing GitHub CLI sign-in, or save a token for this repository.'}{' '}
-            Each person needs access to the private repository.
+                : 'No sign-in is needed for public updates. A saved token or an existing GitHub CLI sign-in can be used if access is restricted.'}
           </p>
           <label>
             GitHub access token
@@ -203,25 +208,23 @@ function UpdateDialog({
               {saving ? <LoaderCircle className="spin" size={14} /> : <Check size={14} />} Save
               token securely
             </button>
-            {result?.credentialSource === 'saved_token' && (
-              <button
-                className="text-button"
-                disabled={blocked}
-                onClick={() => {
-                  void invoke('forget_update_token')
-                    .then(onCheck)
-                    .catch((err) => setLocalError(String(err)));
-                }}
-              >
-                Remove saved token
-              </button>
-            )}
+            <button
+              className="text-button"
+              disabled={blocked || !isTauri()}
+              onClick={() => {
+                void invoke('forget_update_token')
+                  .then(onCheck)
+                  .catch((err) => setLocalError(String(err)));
+              }}
+            >
+              Remove saved token
+            </button>
           </div>
           <p className="micro-note">
             Tokens stay in macOS Keychain or Windows Credential Manager. They are never stored in
             orders, ZIPs, or the app bundle.
           </p>
-        </section>
+        </details>
         {(error || localError) && (
           <p role="alert" className="inline-error">
             {localError || error}

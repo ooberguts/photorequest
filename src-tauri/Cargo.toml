@@ -24,6 +24,7 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 keyring = { version = "3", features = ["apple-native", "windows-native"] }
 open = "5"
 uuid = { version = "1", features = ["v4"] }
+rfd = { version = "0.17", default-features = false, features = ["common-controls-v6"] }
 
 [profile.release]
 codegen-units = 1

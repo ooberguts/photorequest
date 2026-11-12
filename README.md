@@ -22,13 +22,22 @@ A Tauri 2 desktop app for creating photo print orders and opening received order
 - Open batch PDFs in the default PDF viewer to print, or save them separately. Track completed batches locally.
 - Recover the current draft locally. Image bytes are stored once in IndexedDB, independently of specification edits.
 - Work offline without an account, cloud service, or remote font dependency.
-- Check for signed private GitHub releases automatically, display the installed commit/build number, and save the active order before installing and restarting. See [application updates](docs/UPDATES.md) for private repository sign-in and commit versioning.
+- Check for signed public GitHub releases automatically, display the installed commit/build number, and save the active order before installing and restarting. See [application updates](docs/UPDATES.md) for optional access settings and commit versioning.
 
-## Develop
+## Install the app
+
+Download the installer for your computer from [GitHub Releases](https://github.com/ooberguts/photorequest/releases/latest). No programming tools or GitHub account are needed.
+
+- **Windows 10/11 x64:** use **Windows setup**. It includes Microsoft's offline WebView2 installer, installs the runtime if missing, and installs PhotoRequest for the current user. The app statically links its C++ runtime. A very old existing WebView2 may need an online update or the current Microsoft standalone installer; setup explains failures and stops if the runtime is still unusable.
+- **Mac, macOS 12.3+:** use the Apple Silicon DMG for an Apple M-series chip or the Intel DMG for an Intel processor. Open the DMG and drag PhotoRequest into Applications. WebKit and Preview are supplied by macOS. The declared OS minimum matches the app's Safari 15.4 features.
+
+See [installation steps, permission prompts, repairs, and startup errors](public/INSTALLATION.txt). The guide is also bundled with the app and attached to each new release. Runtime problems show recovery steps; a native startup failure writes local diagnostics and displays a native error dialog. Existing draft data is preserved during error handling. OS upgrades, permission approvals, publisher-security prompts, and printer drivers require the appropriate user/administrator steps.
+
+## Develop (contributors only)
 
 Install [Node.js 24 LTS](https://nodejs.org/), a current stable [Rust toolchain](https://rustup.rs/), and the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/).
 
-- **macOS:** Xcode Command Line Tools (`xcode-select --install`). The app targets macOS 12 or newer.
+- **macOS:** Xcode Command Line Tools (`xcode-select --install`). The app targets macOS 12.3 or newer.
 - **Windows:** Microsoft C++ Build Tools with the **Desktop development with C++** workload, Windows SDK, and Microsoft Edge WebView2.
 
 ```sh
@@ -60,7 +69,7 @@ npm run tauri build -- --bundles nsis,msi
 
 Builds appear under `src-tauri/target/release/bundle/`. macOS builds use ad-hoc signing; Windows installers are unsigned. For public distribution, configure [macOS signing and notarization](https://v2.tauri.app/distribute/sign/macos/) and [Windows signing](https://v2.tauri.app/distribute/sign/windows/) using your own developer certificates. Replace the macOS `signingIdentity` of `-` when configuring a Developer ID certificate.
 
-The included GitHub Actions workflow runs checks and builds installers for Apple Silicon Macs, Intel Macs, and Windows x64. Successful main builds publish a complete signed GitHub release with an updater manifest. Release names include the exact commit and commit-count build number. PR builds do not receive signing secrets. Download installers from Releases or workflow artifacts. See [update and release configuration](docs/UPDATES.md).
+The included GitHub Actions workflow runs checks and builds installers for Apple Silicon Macs, Intel Macs, and Windows x64. Successful main builds publish a complete signed GitHub release with an updater manifest. Release names include the exact commit and commit-count build number. PR builds do not receive signing secrets. Download installers from Releases or workflow artifacts. Windows CI inspects the actual EXE/MSI payloads, validates the bundled Microsoft runtime signature, checks static C++ linkage, and performs a per-user install/launch check. The hosted runner already has WebView2, so a genuinely clean Windows VM still needs testing for the missing-runtime branch. See [update and release configuration](docs/UPDATES.md).
 
 ## Request an order
 

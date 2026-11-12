@@ -5,6 +5,7 @@ import {
   makeManifest,
   platformForArtifact,
   REQUIRED_PLATFORMS,
+  installerNotes,
 } from '../../scripts/release.mjs';
 
 describe('commit build versions', () => {
@@ -24,6 +25,27 @@ describe('commit build versions', () => {
 });
 
 describe('signed private release manifests', () => {
+  it('links normal users to the setup EXE, correct Mac DMG, and bundled help', () => {
+    const info = {
+      version: '0.3.7',
+      commit: 'a'.repeat(40),
+      shortCommit: 'aaaaaaa',
+      buildNumber: 7,
+      dirty: false,
+    };
+    const names = [
+      'PhotoRequest-aaaaaaa-windows-x86_64-nsis.exe',
+      'PhotoRequest_0.3.7_aarch64.dmg',
+      'PhotoRequest_0.3.7_x64.dmg',
+    ];
+    const notes = installerNotes(info, 'commit-7-aaaaaaa', names);
+    expect(notes).toContain(
+      '[Windows setup](https://github.com/ooberguts/photorequest/releases/download/commit-7-aaaaaaa/PhotoRequest-aaaaaaa-windows-x86_64-nsis.exe)',
+    );
+    expect(notes).toContain('Mac Apple Silicon installer');
+    expect(notes).toContain('/INSTALLATION.txt');
+    expect(() => installerNotes(info, 'commit-7-aaaaaaa', names.slice(1))).toThrow('setup EXE');
+  });
   it('finds an existing unpublished draft across paginated releases without a tag lookup', () => {
     const draft = { id: 42, tag_name: 'commit-3-example', draft: true, assets: [] };
     const gh = vi.fn(() => JSON.stringify([[{ id: 1, tag_name: 'older', draft: false }], [draft]]));

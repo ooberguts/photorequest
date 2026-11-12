@@ -1,0 +1,87 @@
+PHOTOREQUEST - INSTALLATION AND STARTUP HELP
+
+Get installers only from the project's GitHub Releases:
+https://github.com/ooberguts/photorequest/releases/latest
+
+You do not need Node.js, Rust, Git, GitHub CLI, Homebrew, Python, or a GitHub
+account to install and use a release. Photos, fonts, image processing, ZIP
+creation, PDF creation, and this help file are included. Orders work offline.
+
+WINDOWS 10 OR 11 (64-BIT)
+1. Download the Windows setup EXE from the release's installer links.
+2. Open it and follow setup. It installs for your Windows account by default.
+3. Setup checks Microsoft Edge WebView2 and installs the bundled, Microsoft
+   Evergreen runtime if it is missing. The full installer includes this runtime
+   so a missing runtime can be installed without an internet connection.
+   Microsoft's runtime installer may take several minutes. Allow any Windows
+   permission request. If Windows asks for a restart, restart before opening
+   PhotoRequest. Managed computers may need administrator approval.
+4. Open PhotoRequest from the Start menu or its desktop shortcut.
+
+If a WebView2 runtime is already present but very old, setup tries to update it.
+Connect to the internet for this repair, or install Microsoft's current
+Evergreen Standalone Runtime, then run PhotoRequest setup again:
+https://developer.microsoft.com/microsoft-edge/webview2
+
+The C++ runtime used by PhotoRequest is linked into the app. Do not install
+Visual Studio, build tools, or SDKs just to run this application.
+The MSI is an alternative for administrators; use the setup EXE for normal use.
+
+MAC (macOS 12.3 OR NEWER)
+1. In Apple menu > About This Mac, check the chip/processor and macOS version.
+2. Choose the Mac Apple Silicon DMG for an Apple M-series chip, or the Intel
+   Mac DMG for an Intel processor. No Rosetta is needed with the matching build.
+3. Open the DMG and drag PhotoRequest into Applications.
+4. Open PhotoRequest from Applications, then eject the installer disk image.
+
+Mac's WebKit runtime and Preview PDF viewer come with macOS. If macOS is older
+than 12.3, use Software Update first; the app cannot safely upgrade macOS for
+you. The app bundle declares the minimum version so macOS can explain the
+requirement before launch. No separate browser or programming tools are needed.
+
+SECURITY AND PERMISSION PROMPTS
+The updater's package signatures verify app updates. Operating-system publisher
+signing is separate: current Mac downloads use ad-hoc signing and Windows
+installers are not Authenticode signed. Until publisher certificates are set
+up, first downloads can show an unverified-publisher prompt.
+
+If you trust this project's release and macOS blocks opening it, follow Apple's
+Privacy & Security > Open Anyway process for that app. If Windows SmartScreen
+blocks it, check that you downloaded the official release and follow the
+on-screen More info options. On a managed computer, ask the administrator.
+The installer does not disable security protections or bypass organization
+policy. Publisher signing/notarization requires the project's signing accounts.
+
+IF INSTALLATION OR OPENING FAILS
+- Close PhotoRequest, restart the computer if requested, and retry the latest
+  full installer. Reinstalling does not intentionally remove your saved order.
+- Check that your disk has space and that your account can write to its app and
+  temporary folders. Antivirus or organization policy can block installation;
+  ask your administrator rather than turning protections off.
+- Windows: note the setup error code and use the installer's Show details.
+  A missing/outdated WebView2 must be repaired before the app can work.
+- Mac: check the minimum OS version, correct chip download, and Applications
+  location. Follow the OS's normal approval steps for a trusted download.
+- If the app window stays on Opening PhotoRequest, use its installation-help
+  link. If it shows a recovery screen, follow its steps and try reopening it.
+- A native startup failure displays an error dialog and attempts to write a
+  PhotoRequest-startup-<id>.txt file in the system temporary folder. The dialog
+  shows its location. It includes build/system/error details, not photo bytes
+  or tokens. Nothing is uploaded automatically. Share the details only if you
+  want help diagnosing the issue.
+- Do not clear application data as an installation repair step. Keep exported
+  order ZIPs as your portable backups.
+
+PRINTING
+Mac uses the built-in Preview app. Windows uses the PDF viewer configured by
+Windows (usually Edge). If there is no PDF file association, choose a PDF viewer
+in Windows Default apps. Select your printer in that viewer. Printer drivers,
+physical paper, OS updates, and organization approvals require the appropriate
+user/administrator steps; PhotoRequest does not guess which driver to install.
+
+UPDATES
+Public GitHub releases work without signing in or installing GitHub tools.
+Automatic checking runs at startup and every 12 hours. Install and restart
+saves the active order before installing a verified package. An internet
+connection is needed to check/download an update. If offline, keep working and
+check again later. GitHub rate limits can temporarily delay a check.

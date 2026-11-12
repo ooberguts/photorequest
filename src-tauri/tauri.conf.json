@@ -7,7 +7,8 @@
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://127.0.0.1:1420",
     "beforeBuildCommand": "npm run build",
-    "frontendDist": "../dist"
+    "frontendDist": "../dist",
+    "windows": { "staticVCRuntime": true }
   },
   "app": {
     "windows": [
@@ -28,6 +29,7 @@
   },
   "bundle": {
     "active": true,
+    "resources": { "../public/INSTALLATION.txt": "INSTALLATION.txt" },
     "targets": "all",
     "category": "Photography",
     "shortDescription": "Photo print orders",
@@ -40,13 +42,19 @@
       "icons/icon.ico"
     ],
     "macOS": {
-      "minimumSystemVersion": "12.0",
+      "minimumSystemVersion": "12.3",
       "signingIdentity": "-"
     },
     "windows": {
+      "webviewInstallMode": { "type": "offlineInstaller", "silent": true },
+      "minimumWebview2Version": "110.0.1531.0",
+      "allowDowngrades": false,
       "nsis": {
-        "displayLanguageSelector": true,
-        "languages": ["English"]
+        "installMode": "currentUser",
+        "displayLanguageSelector": false,
+        "languages": ["English"],
+        "customLanguageFiles": { "English": "installers/English.nsh" },
+        "installerHooks": "installers/hooks.nsh"
       }
     },
     "createUpdaterArtifacts": true

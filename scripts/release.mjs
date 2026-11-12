@@ -12,6 +12,17 @@ export const REQUIRED_PLATFORMS = [
   'windows-x86_64-msi',
 ];
 
+export function installerNotes(info, tag, names) {
+  const link = (name) =>
+    `https://github.com/${REPO}/releases/download/${tag}/${encodeURIComponent(name)}`;
+  const windows = names.find((n) => /windows-x86_64-nsis\.exe$/.test(n));
+  const apple = names.find((n) => /_aarch64\.dmg$/.test(n));
+  const intel = names.find((n) => /_x64\.dmg$/.test(n));
+  if (!windows || !apple || !intel)
+    throw new Error('The release must include a setup EXE and both Mac DMGs.');
+  return `PhotoRequest commit ${info.shortCommit}, build ${info.buildNumber}.\n\n## Install PhotoRequest\n\n| Your computer | Installer |\n| --- | --- |\n| Windows 10 or 11, 64-bit | [Windows setup](${link(windows)}) |\n| Mac with an Apple M-series chip, macOS 12.3+ | [Mac Apple Silicon installer](${link(apple)}) |\n| Mac with an Intel processor, macOS 12.3+ | [Mac Intel installer](${link(intel)}) |\n\nWindows setup includes Microsoft's offline WebView2 runtime and installs it if needed. The C++ runtime is built into the app. Mac uses the runtime supplied by macOS. No Node.js, Rust, GitHub account, or developer tools are required.\n\n[Installation steps and troubleshooting](${link('INSTALLATION.txt')}) are included as a downloadable text file and inside the app. Permission prompts, OS upgrades, and managed-computer restrictions may require your action; the guide explains those steps.\n\nAlready installed? Open **Updates** and choose **Install and restart**. Updates are verified with the app's signing key and the active order is saved first.\n\nSource: https://github.com/${REPO}/commit/${info.commit}\n`;
+}
+
 export function findReleaseByTag(gh, tag) {
   // Drafts can exist before their Git tag does; the by-tag API then returns 404.
   // Listing releases includes drafts and gives us the stable release ID.
@@ -122,10 +133,17 @@ async function publish() {
   for (const platform of REQUIRED_PLATFORMS)
     if (!payloads[platform]) throw new Error(`No signed payload found for ${platform}.`);
   const tag = `commit-${info.buildNumber}-${info.shortCommit}`;
+  const help = join(output, 'INSTALLATION.txt');
+  await copyFile(resolve('public/INSTALLATION.txt'), help);
+  upload.push(help);
   const notes = join(output, 'release-notes.txt');
   await writeFile(
     notes,
-    `PhotoRequest commit ${info.shortCommit}, build ${info.buildNumber}.\n\nSource: https://github.com/${REPO}/commit/${info.commit}\n\nInstallers and update packages are generated from this commit. The in-app updater verifies the package signature before installation.\n`,
+    installerNotes(
+      info,
+      tag,
+      upload.map((file) => basename(file)),
+    ),
   );
   let release = findReleaseByTag(gh, tag);
   if (release && !release.draft) {

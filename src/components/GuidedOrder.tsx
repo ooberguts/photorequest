@@ -395,7 +395,6 @@ export default function GuidedOrder({
                     setChoice(appliedChoice.current);
                     setPendingChoice(false);
                     setError('');
-                    setError('');
                   }}
                 >
                   discard these setting changes

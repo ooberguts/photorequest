@@ -1,5 +1,6 @@
 import type { BuildInfo } from './build-info.mjs';
 export const REQUIRED_PLATFORMS: string[];
+export function installerNotes(info: BuildInfo, tag: string, names: string[]): string;
 export function findReleaseByTag(
   gh: (...args: string[]) => string,
   tag: string,

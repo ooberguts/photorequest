@@ -4564,3 +4564,42 @@ dialog::backdrop {
 .guided-order textarea {
   scroll-margin-bottom: 130px;
 }
+.startup-support {
+  max-width: 760px;
+  margin: 10vh auto;
+  padding: 32px;
+  background: #fff;
+  border: 1px solid #dce4d5;
+  border-radius: 12px;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.startup-support h1 {
+  font-size: 28px;
+  line-height: 1.3;
+  margin-bottom: 18px;
+}
+.startup-support p,
+.startup-support ol,
+.startup-support details {
+  margin: 18px 0;
+}
+.startup-support li {
+  margin: 12px 0 12px 22px;
+}
+.startup-support > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.startup-support pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.update-auth > summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: #526c43;
+  margin: 12px 0;
+}
