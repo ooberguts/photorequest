@@ -83,7 +83,7 @@ export default function OrderCart({
   const items = order.photos.reduce((n, p) => n + p.requests.length, 0);
   const total = stats(order);
   return (
-    <section className="order-cart panel" aria-label="Order cart">
+    <section id="order-cart" className="order-cart panel" aria-label="Order cart">
       <div className="cart-heading">
         <div>
           <ShoppingCart size={20} />

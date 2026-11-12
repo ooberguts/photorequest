@@ -22,6 +22,7 @@ type Props = {
   onSave: (requests: PrintRequest[]) => void;
   initialRequestId?: string;
   addSize?: boolean;
+  maxPrints?: number;
 };
 export default function PhotoEditor({
   photo,
@@ -32,6 +33,7 @@ export default function PhotoEditor({
   onSave,
   initialRequestId,
   addSize,
+  maxPrints = 5000,
 }: Props) {
   const [requests, setRequests] = useState(() => {
     const requests = photo.requests.map((r) => ({ ...r }));
@@ -64,7 +66,15 @@ export default function PhotoEditor({
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     dialog.current?.showModal();
+    if (initialRequestId || addSize) {
+      dialog.current
+        ?.querySelector<HTMLSelectElement>('.request-panel.active select')
+        ?.focus({ preventScroll: true });
+    }
   }, []);
+  useEffect(() => {
+    dialog.current?.querySelector('.request-panel.active')?.scrollIntoView({ block: 'nearest' });
+  }, [active]);
   const req = requests[Math.min(active, requests.length - 1)];
   const update = (index: number, patch: Partial<PrintRequest>) =>
     setRequests((prev) => prev.map((r, i) => (i === index ? { ...r, ...patch } : r)));
@@ -79,6 +89,12 @@ export default function PhotoEditor({
         setError(parsed.error.issues[0].message);
         return;
       }
+    }
+    if (requests.reduce((n, request) => n + request.quantity, 0) * count > maxPrints) {
+      setError(
+        'These copies exceed the 5,000-print order limit. Reduce the quantities before saving.',
+      );
+      return;
     }
     onSave(requests);
   }

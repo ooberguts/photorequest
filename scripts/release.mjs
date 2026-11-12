@@ -12,6 +12,18 @@ export const REQUIRED_PLATFORMS = [
   'windows-x86_64-msi',
 ];
 
+export function findReleaseByTag(gh, tag) {
+  // Drafts can exist before their Git tag does; the by-tag API then returns 404.
+  // Listing releases includes drafts and gives us the stable release ID.
+  const pages = JSON.parse(
+    gh('api', `repos/${REPO}/releases?per_page=100`, '--paginate', '--slurp'),
+  );
+  const matches = pages.flat().filter((release) => release.tag_name === tag);
+  if (matches.length > 1)
+    throw new Error(`Multiple releases exist for ${tag}; refusing to publish ambiguously.`);
+  return matches[0] || null;
+}
+
 export function platformForArtifact(path) {
   const normalized = path.replaceAll('\\', '/');
   if (normalized.includes('aarch64-apple-darwin') && path.endsWith('.app.tar.gz'))
@@ -115,33 +127,32 @@ async function publish() {
     notes,
     `PhotoRequest commit ${info.shortCommit}, build ${info.buildNumber}.\n\nSource: https://github.com/${REPO}/commit/${info.commit}\n\nInstallers and update packages are generated from this commit. The in-app updater verifies the package signature before installation.\n`,
   );
-  let release;
-  try {
-    release = JSON.parse(gh('api', `repos/${REPO}/releases/tags/${tag}`));
-  } catch {
-    /* New release. */
-  }
+  let release = findReleaseByTag(gh, tag);
   if (release && !release.draft) {
     console.log(`Release ${tag} is already published.`);
     return;
   }
-  if (!release)
-    gh(
-      'release',
-      'create',
-      tag,
-      '--repo',
-      REPO,
-      '--target',
-      info.commit,
-      '--title',
-      `Commit ${info.shortCommit} · build ${info.buildNumber}`,
-      '--notes-file',
-      notes,
-      '--draft',
+  if (!release) {
+    const request = join(output, 'create-release.json');
+    await writeFile(
+      request,
+      JSON.stringify({
+        tag_name: tag,
+        target_commitish: info.commit,
+        name: `Commit ${info.shortCommit} · build ${info.buildNumber}`,
+        body: await readFile(notes, 'utf8'),
+        draft: true,
+      }),
     );
+    release = JSON.parse(
+      gh('api', '--method', 'POST', `repos/${REPO}/releases`, '--input', request),
+    );
+  }
+  if (!Number.isSafeInteger(release.id))
+    throw new Error('GitHub did not return a valid release ID.');
+  const releaseEndpoint = `repos/${REPO}/releases/${release.id}`;
   gh('release', 'upload', tag, ...upload, '--repo', REPO, '--clobber');
-  release = JSON.parse(gh('api', `repos/${REPO}/releases/tags/${tag}`));
+  release = JSON.parse(gh('api', releaseEndpoint));
   const artifacts = {};
   for (const platform of REQUIRED_PLATFORMS) {
     const payload = payloads[platform],
@@ -162,7 +173,7 @@ async function publish() {
     console.log('A newer commit superseded this draft; leaving it unpublished.');
     return;
   }
-  gh('release', 'edit', tag, '--repo', REPO, '--draft=false', '--latest');
+  gh('api', '--method', 'PATCH', releaseEndpoint, '-F', 'draft=false', '-f', 'make_latest=true');
   console.log(`Published signed update https://github.com/${REPO}/releases/tag/${tag}`);
 }
 

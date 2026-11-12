@@ -669,6 +669,18 @@ export default function App() {
                       </p>
                     </div>
                     <div className="gallery-controls">
+                      {summary.photos > 0 && (
+                        <button
+                          className="button secondary compact"
+                          onClick={() =>
+                            document
+                              .getElementById('order-cart')
+                              ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                          }
+                        >
+                          Review cart <ChevronRight size={13} />
+                        </button>
+                      )}
                       <div className="unit-switch" aria-label="Measurement units">
                         <button
                           className={units === 'in' ? 'active' : ''}
@@ -1124,6 +1136,12 @@ export default function App() {
           key={editing.join(',')}
           photo={editorPhoto}
           {...editorMode}
+          maxPrints={
+            LIMITS.prints -
+            order.photos
+              .filter((p) => !editing.includes(p.id))
+              .reduce((n, p) => n + p.requests.reduce((total, r) => total + r.quantity, 0), 0)
+          }
           count={editing.length}
           targetDpi={order.targetDpi}
           units={units}

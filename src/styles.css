@@ -1355,6 +1355,7 @@ nav .nav-count {
 .order-cart {
   margin-bottom: 22px;
   overflow: hidden;
+  scroll-margin-top: 20px;
 }
 .cart-heading {
   padding: 20px;
@@ -1428,6 +1429,9 @@ nav .nav-count {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+}
+.cart-table-scroll {
+  overflow-x: auto;
 }
 .cart-table th {
   font-size: 9px;

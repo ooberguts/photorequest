@@ -1,5 +1,9 @@
 import type { BuildInfo } from './build-info.mjs';
 export const REQUIRED_PLATFORMS: string[];
+export function findReleaseByTag(
+  gh: (...args: string[]) => string,
+  tag: string,
+): { id: number; tag_name: string; draft: boolean; assets: { id: number; name: string }[] } | null;
 export function platformForArtifact(path: string): string | null;
 export function makeManifest(
   info: BuildInfo,

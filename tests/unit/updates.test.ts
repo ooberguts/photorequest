@@ -1,6 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { getBuildInfo, versionForCommit } from '../../scripts/build-info.mjs';
-import { makeManifest, platformForArtifact, REQUIRED_PLATFORMS } from '../../scripts/release.mjs';
+import {
+  findReleaseByTag,
+  makeManifest,
+  platformForArtifact,
+  REQUIRED_PLATFORMS,
+} from '../../scripts/release.mjs';
 
 describe('commit build versions', () => {
   it('uses the commit count as a numeric version component and retains the full SHA', () => {
@@ -19,6 +24,28 @@ describe('commit build versions', () => {
 });
 
 describe('signed private release manifests', () => {
+  it('finds an existing unpublished draft across paginated releases without a tag lookup', () => {
+    const draft = { id: 42, tag_name: 'commit-3-example', draft: true, assets: [] };
+    const gh = vi.fn(() => JSON.stringify([[{ id: 1, tag_name: 'older', draft: false }], [draft]]));
+    expect(findReleaseByTag(gh, draft.tag_name)).toEqual(draft);
+    expect(gh).toHaveBeenCalledWith(
+      'api',
+      'repos/ooberguts/photorequest/releases?per_page=100',
+      '--paginate',
+      '--slurp',
+    );
+    expect(findReleaseByTag(gh, 'new-tag')).toBeNull();
+  });
+  it('does not mistake an API failure or ambiguous drafts for a new release', () => {
+    expect(() =>
+      findReleaseByTag(() => {
+        throw new Error('GitHub 403');
+      }, 'tag'),
+    ).toThrow('GitHub 403');
+    expect(() =>
+      findReleaseByTag(() => JSON.stringify([[{ tag_name: 'tag' }, { tag_name: 'tag' }]]), 'tag'),
+    ).toThrow('Multiple releases');
+  });
   const info = {
     version: '0.3.42',
     commit: 'a'.repeat(40),

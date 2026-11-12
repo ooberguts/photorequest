@@ -6,6 +6,7 @@ A Tauri 2 desktop app for creating photo print orders and opening received order
 
 - Add JPEG, PNG, and WebP images through a file picker or drag and drop.
 - Configure multiple print sizes per image, custom dimensions in inches or millimeters, and copies per size.
+- Review every size and finish as a separate cart item. Change its quantity, edit it, add another size, or remove it without duplicating the original image.
 - Choose matte, gloss, or holographic paper. Holographic patterns include Rainbow, Broken glass, Sparkle, Stars, Hearts, and a custom stock name.
 - Preview center cropping or fit the entire image inside a print frame.
 - Check effective DPI at each requested size, with a configurable quality target and resolution warnings.
@@ -63,7 +64,7 @@ The included GitHub Actions workflow runs checks and builds installers for Apple
 
 1. Open **Order studio** and name the order.
 2. Add images. Click an image's **Print specifications** button to set sizes, copies, finish, and fitting. Select multiple images to apply the same specifications in bulk.
-3. Review DPI warnings and add any print instructions.
+3. Choose **Review cart** to see all sizes and finishes. Use **Add size** beside an image to request another size, change copies directly, or edit/remove an individual item. Review DPI warnings and add any print instructions.
 4. Choose **Export order ZIP** and send that ZIP to the person printing.
 
 Image numbering follows the gallery order. Use the arrows on image previews to reorder. Removing images causes the next export to use a new contiguous sequence. The original filenames are retained in `order.json`; the files on your disk are not renamed.

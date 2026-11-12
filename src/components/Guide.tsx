@@ -58,6 +58,7 @@ export default function Guide() {
           <p>
             Add JPEG, PNG, or WebP photos. Give each one a size, quantity, and paper finish. Add
             several sizes to the same photo, or select several photos to apply the same settings.
+            Use Review cart to see each size and finish, change copies, or add and remove items.
           </p>
           <p>
             Choose inches or millimeters for custom sizes. “Fill & crop” shows a center crop; “Fit
